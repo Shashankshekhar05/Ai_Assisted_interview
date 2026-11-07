@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview Pro — Enterprise AI Recruitment & Voice Interview Platform</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-[#090818] text-slate-100 antialiased flex flex-col min-h-screen selection:bg-violet-600 selection:text-white">
+
+    <!-- ================= STICKY TOP NAVIGATION ================= -->
+    <header class="bg-[#0D0B24]/90 backdrop-blur-md border-b border-white/10 sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+        <!-- Brand Logo -->
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="scrollToHero()">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 text-white flex items-center justify-center font-bold text-base shadow-lg shadow-violet-500/30">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <span class="font-extrabold text-lg text-white tracking-tight">AI Interview Pro</span>
+        </div>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden md:flex items-center space-x-7 text-sm font-medium text-slate-300">
+            <a href="#hero" class="hover:text-white transition">Home</a>
+            <a href="#features" class="hover:text-white transition">Features</a>
+            <a href="#dashboard-section" class="hover:text-white transition" onclick="switchMainTab('dashboard')">Recruiter App</a>
+            <a href="#pricing" class="hover:text-white transition">Pricing</a>
+        </nav>
+
+        <!-- Right Quick Actions -->
+        <div class="flex items-center space-x-3">
+            <button onclick="switchMainTab('dashboard')" class="hidden sm:inline-flex btn-glass text-xs py-2 px-3.5">
+                Book Demo
+            </button>
+            <button onclick="switchMainTab('dashboard')" class="btn-violet text-xs py-2 px-4">
+                <span>Get Started</span>
+                <i class="fa-solid fa-arrow-right text-[11px]"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ================= 1. HERO SECTION (DARK NAVY / PURPLE GLOW AESTHETIC) ================= -->
+    <section id="hero" class="hero-glow-mesh pt-12 pb-20 px-4 sm:px-6 relative overflow-hidden border-b border-white/10">
+        <div class="max-w-6xl mx-auto text-center space-y-6 relative z-10">
+            <!-- Pill Tag -->
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-950/70 border border-violet-500/30 text-violet-300 text-xs font-semibold shadow-inner">
+                <i class="fa-solid fa-sparkles text-violet-400"></i>
+                <span>AI-Powered Hiring Platform</span>
+            </div>
+
+            <!-- Main Headline -->
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                Automate Interviews.<br>
+                Verify Candidates.<br>
+                <span class="text-gradient-violet">Hire with Confidence.</span>
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="max-w-2xl mx-auto text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
+                An end-to-end AI recruitment platform that matches resumes, conducts voice interviews, prevents cheating, and gives structured, data-driven evaluations.
+            </p>
+
+            <!-- CTA Buttons -->
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <button onclick="switchMainTab('dashboard')" class="btn-violet text-sm py-3 px-6 shadow-xl shadow-violet-600/30">
+                    <span>Get Started Free</span>
+                    <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+                <button onclick="switchMainTab('dashboard')" class="btn-glass text-sm py-3 px-5">
+                    <i class="fa-regular fa-calendar text-slate-400 mr-1.5"></i>
+                    <span>Book a Demo</span>
+                </button>
+            </div>
+
+            <!-- 4 Feature Highlights Grid -->
+            <div id="features" class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto pt-6 text-left">
+                <div class="glass-panel-dark p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-violet-500/20 text-violet-400 flex items-center justify-center text-sm shrink-0">
+                        <i class="fa-solid fa-file-lines"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-white">JD-Resume Matching</div>
+                        <div class="text-[10px] text-slate-400">AI, Semantic</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel-dark p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm shrink-0">
+                        <i class="fa-solid fa-headset"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-white">Real-time Voice</div>
+                        <div class="text-[10px] text-slate-400">Hands-free Interview</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel-dark p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-sm shrink-0">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-white">AI Proctoring</div>
+                        <div class="text-[10px] text-slate-400">Eye Gaze, Phone, Tab</div>
+                    </div>
+                </div>
+
+                <div class="glass-panel-dark p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm shrink-0">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-white">Automated Reports</div>
+                        <div class="text-[10px] text-slate-400">& Score Evaluations</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= LAPTOP MOCKUP SHOWCASE ================= -->
+            <div class="pt-8 max-w-4xl mx-auto">
+                <div class="laptop-chassis cursor-pointer group" onclick="switchMainTab('interview')">
+                    <div class="laptop-notch"></div>
+                    <div class="bg-[#0F0C24] rounded-xl overflow-hidden border border-white/10 shadow-2xl relative p-4 sm:p-6 text-left">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                            
+                            <!-- Left: AI Interviewer Video Avatar Stage (8 Cols) -->
+                            <div class="md:col-span-8 bg-[#151230] rounded-xl p-4 border border-white/10 relative overflow-hidden flex flex-col justify-between min-h-[260px]">
+                                <!-- Top Bar -->
+                                <div class="flex items-center justify-between text-xs text-slate-300">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-2 h-2 rounded-full bg-violet-400 animate-pulse"></div>
+                                        <span class="font-bold text-white">AI Interviewer</span>
+                                    </div>
+                                    <span class="text-[11px] bg-white/10 px-2 py-0.5 rounded font-mono text-slate-400">Q 01 / 10</span>
+                                </div>
+
+                                <!-- Center Avatar & Aura -->
+                                <div class="my-auto flex flex-col items-center justify-center py-2 relative">
+                                    <div class="absolute inset-0 bg-violet-600/20 filter blur-xl rounded-full"></div>
+                                    <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-violet-400 shadow-xl relative z-10">
+                                        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80" alt="AI Interviewer" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="mt-2 text-xs font-semibold text-violet-300 flex items-center gap-1.5">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                        <span>Ready to evaluate candidate</span>
+                                    </div>
+                                </div>
+
+                                <!-- Subtitle / Question Bubble -->
+                                <div class="bg-black/60 backdrop-blur-md p-3 rounded-lg border border-white/10 flex items-center space-x-3 text-white text-xs">
+                                    <div class="wave-active flex items-center gap-0.5 shrink-0">
+                                        <span class="wave-bar"></span>
+                                        <span class="wave-bar"></span>
+                                        <span class="wave-bar"></span>
+                                        <span class="wave-bar"></span>
+                                    </div>
+                                    <p class="truncate font-medium text-slate-200">
+                                        "Can you explain a project where you used Python and an LLM?"
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Right: Live Proctoring & PiP Candidate Webcam (4 Cols) -->
+                            <div class="md:col-span-4 space-y-3">
+                                <!-- Live Proctoring Box -->
+                                <div class="bg-[#151230] p-3.5 rounded-xl border border-white/10 space-y-2.5">
+                                    <div class="flex items-center justify-between text-xs font-bold text-white border-b border-white/10 pb-1.5">
+                                        <span class="flex items-center gap-1.5 text-emerald-400">
+                                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                            Proctoring (Live)
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="space-y-1.5 text-[11px]">
+                                        <div class="flex items-center justify-between text-slate-300">
+                                            <span><i class="fa-regular fa-eye mr-1 text-slate-400"></i>Eye Gaze</span>
+                                            <span class="text-emerald-400 font-bold">✓ Normal</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-slate-300">
+                                            <span><i class="fa-solid fa-mobile-screen mr-1 text-slate-400"></i>Mobile Phone</span>
+                                            <span class="text-emerald-400 font-bold">✓ Not Detected</span>
+                                        </div>
+                                        <div class="flex items-center justify-between text-slate-300">
+                                            <span><i class="fa-regular fa-window-maximize mr-1 text-slate-400"></i>Tab Activity</span>
+                                            <span class="text-emerald-400 font-bold">✓ In Focus</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Circular Gauge -->
+                                    <div class="pt-2 border-t border-white/10 flex items-center justify-center">
+                                        <div class="w-16 h-16 rounded-full border-4 border-emerald-500/80 flex flex-col items-center justify-center text-center">
+                                            <span class="text-xs font-extrabold text-white font-mono">98%</span>
+                                            <span class="text-[8px] text-slate-400 uppercase">Integrity</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Candidate Preview Tile -->
+                                <div class="bg-black rounded-xl overflow-hidden aspect-video relative border border-white/10 flex items-center justify-center">
+                                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80" alt="Candidate" class="w-full h-full object-cover opacity-90">
+                                    <span class="absolute bottom-1.5 left-2 text-[9px] bg-black/60 px-1.5 py-0.5 rounded text-white font-mono">Candidate Cam</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hover Prompt Pill -->
+                        <div class="absolute inset-0 bg-violet-950/40 opacity-0 group-hover:opacity-100 backdrop-blur-[2px] transition flex items-center justify-center rounded-xl">
+                            <span class="btn-violet text-xs py-2 px-4 shadow-xl">
+                                <i class="fa-solid fa-play"></i>
+                                Click to Launch Live Working System
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= 2. MAIN APPLICATION PLATFORM ================= -->
+    <section id="dashboard-section" class="bg-[#F8FAFC] text-slate-900 py-10 px-4 sm:px-6 flex-1 min-h-[800px]">
+        <div class="max-w-7xl mx-auto space-y-6">
+
+            <!-- Clean Tab Switcher Bar matching the 3 cards in the reference image -->
+            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                <div class="flex items-center space-x-3">
+                    <span class="w-3 h-3 rounded-full bg-violet-600"></span>
+                    <h2 class="text-xl font-bold text-slate-900">Live Hiring Platform</h2>
+                    <span class="text-xs bg-violet-100 text-violet-800 px-2.5 py-0.5 rounded-full font-semibold">Production Mode</span>
+                </div>
+
+                <!-- Navigation Tabs (Dashboard, Interview Room, Report) -->
+                <div class="flex items-center bg-slate-200/80 p-1 rounded-xl text-xs font-semibold">
+                    <button id="tab-btn-dashboard" onclick="switchMainTab('dashboard')" class="sub-nav-pill active">
+                        <i class="fa-solid fa-chart-column mr-1.5"></i>Recruiter Dashboard
+                    </button>
+                    <button id="tab-btn-interview" onclick="switchMainTab('interview')" class="sub-nav-pill">
+                        <i class="fa-solid fa-video mr-1.5"></i>AI Interview Room
+                    </button>
+                    <button id="tab-btn-report" onclick="switchMainTab('report')" class="sub-nav-pill">
+                        <i class="fa-solid fa-file-lines mr-1.5"></i>Evaluation Report
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================= VIEW 1: RECRUITER DASHBOARD (MATCHING IMAGE 2 LEFT CARD) ================= -->
+            <div id="view-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Left Recruiter Sidebar (3 Cols) -->
+                <div class="lg:col-span-3 glass-panel-light rounded-2xl p-4 space-y-6">
+                    <div class="flex items-center space-x-2.5 pb-4 border-b border-slate-100">
+                        <div class="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <span class="font-bold text-sm text-slate-800">AI Interview Pro</span>
+                    </div>
+
+                    <nav class="space-y-1 text-xs font-semibold">
+                        <a href="javascript:void(0)" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg bg-violet-50 text-violet-700">
+                            <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="javascript:void(0)" onclick="focusResumeForm()" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                            <i class="fa-solid fa-briefcase w-4 text-center"></i>
+                            <span>Jobs (Screen & Match)</span>
+                        </a>
+                        <a href="javascript:void(0)" onclick="focusCandidatePreview()" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                            <i class="fa-solid fa-users w-4 text-center"></i>
+                            <span>Candidates</span>
+                        </a>
+                        <a href="javascript:void(0)" onclick="switchMainTab('interview')" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                            <i class="fa-solid fa-video w-4 text-center"></i>
+                            <span>Interviews</span>
+                        </a>
+                        <a href="javascript:void(0)" onclick="switchMainTab('report')" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                            <i class="fa-solid fa-file-invoice w-4 text-center"></i>
+                            <span>Reports</span>
+                        </a>
+                        <a href="javascript:void(0)" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
+                            <i class="fa-solid fa-gear w-4 text-center"></i>
+                            <span>Settings</span>
+                        </a>
+                    </nav>
+
+                    <!-- Recruiter Profile Footer -->
+                    <div class="pt-4 border-t border-slate-100 flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-xs">
+                            SS
+                        </div>
+                        <div class="overflow-hidden">
+                            <div class="text-xs font-bold text-slate-800 truncate">Shashank S.</div>
+                            <div class="text-[10px] text-slate-400">Recruitment Lead</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Dashboard Workspace (9 Cols) -->
+                <div class="lg:col-span-9 space-y-6">
+                    
+                    <!-- Dashboard Header & Create Job -->
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900">Recruiter Dashboard</h3>
+                            <p class="text-xs text-slate-500">Overview of your hiring pipeline and real-time candidate screening.</p>
+                        </div>
+                        <button onclick="focusResumeForm()" class="btn-violet text-xs py-2 px-3.5">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                            <span>+ Create Job & Screen</span>
+                        </button>
+                    </div>
+
+                    <!-- 4 Stat Overview Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                        <div class="glass-panel-light p-4 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-slate-500 font-medium">Active Jobs</span>
+                                <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-briefcase"></i>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-slate-900 font-mono">12</div>
+                        </div>
+
+                        <div class="glass-panel-light p-4 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-slate-500 font-medium">Total Candidates</span>
+                                <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-users"></i>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-slate-900 font-mono">248</div>
+                        </div>
+
+                        <div class="glass-panel-light p-4 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-slate-500 font-medium">Interviews Today</span>
+                                <div class="w-7 h-7 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-calendar-check"></i>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-slate-900 font-mono">32</div>
+                        </div>
+
+                        <div class="glass-panel-light p-4 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-slate-500 font-medium">Shortlisted</span>
+                                <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-emerald-600 font-mono">18</div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Two Sub-Panels: Hiring Funnel + Recent Activity -->
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                        
+                        <!-- Hiring Funnel Visualization (5 Cols) -->
+                        <div class="md:col-span-5 glass-panel-light p-4 rounded-xl space-y-3">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Hiring Funnel</h4>
+                            <div class="space-y-2 pt-1 font-mono">
+                                <div class="funnel-stage bg-indigo-100/70 text-indigo-900 border border-indigo-200">
+                                    <span>Applied</span>
+                                    <span class="font-bold">248</span>
+                                </div>
+                                <div class="funnel-stage bg-violet-100/70 text-violet-900 border border-violet-200 w-[88%] mx-auto">
+                                    <span>Screened</span>
+                                    <span class="font-bold">196</span>
+                                </div>
+                                <div class="funnel-stage bg-purple-100/70 text-purple-900 border border-purple-200 w-[72%] mx-auto">
+                                    <span>Interviewed</span>
+                                    <span class="font-bold">72</span>
+                                </div>
+                                <div class="funnel-stage bg-emerald-100 text-emerald-900 border border-emerald-300 w-[55%] mx-auto">
+                                    <span>Shortlisted</span>
+                                    <span class="font-bold">18</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity Section (7 Cols) -->
+                        <div class="md:col-span-7 glass-panel-light p-4 rounded-xl space-y-3">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Recent Candidate Activity</h4>
+                            <div class="space-y-2.5 text-xs">
+                                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition border border-slate-100">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+                                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-full h-full object-cover">
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-900">Rahul Verma</div>
+                                            <div class="text-[10px] text-emerald-600 font-semibold">Interview Completed</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 font-mono">2 min ago</span>
+                                </div>
+
+                                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition border border-slate-100">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+                                            <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-full h-full object-cover">
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-900">Priya Singh</div>
+                                            <div class="text-[10px] text-violet-600 font-semibold">Shortlisted</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 font-mono">15 min ago</span>
+                                </div>
+
+                                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition border border-slate-100">
+                                    <div class="flex items-center space-x-2.5">
+                                        <div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+                                            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-full h-full object-cover">
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-slate-900">Aman Kumar</div>
+                                            <div class="text-[10px] text-indigo-600 font-semibold">Joined Live Interview</div>
+                                        </div>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 font-mono">28 min ago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Embedded Interactive Resume & JD Screener -->
+                    <div id="resume-screener-card" class="glass-panel-light p-6 rounded-2xl border-2 border-violet-100 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-violet-600"></i>
+                                    AI Resume Matcher & JD Alignment
+                                </h4>
+                                <p class="text-xs text-slate-500">Upload any candidate's resume (PDF) to extract experience level and compute semantic match score.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Target Position Title</label>
+                                <input type="text" id="input-role-title" value="Full Stack Python & AI Engineer" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-violet-600">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Match Threshold (%)</label>
+                                <input type="number" id="input-threshold" value="70" min="30" max="100" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-900 font-mono">
+                            </div>
+                        </div>
+
+                        <div class="text-xs">
+                            <label class="block font-semibold text-slate-700 mb-1">Job Description (JD)</label>
+                            <textarea id="input-jd-text" rows="3" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-800 focus:outline-none focus:border-violet-600 leading-relaxed">Looking for a Backend / Full Stack Engineer skilled in Python, FastAPI, SQL database design, REST APIs, asynchronous programming, and AI/LLM integration. Knowledge of Docker, automated testing, and cloud deployments is a plus.</textarea>
+                        </div>
+
+                        <div class="text-xs">
+                            <label class="block font-semibold text-slate-700 mb-1">Candidate Resume (PDF)</label>
+                            <input type="file" id="input-resume-file" accept=".pdf" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-violet-600 file:text-white cursor-pointer border border-dashed border-slate-300 p-2 rounded-xl">
+                        </div>
+
+                        <button id="btn-run-match" class="w-full py-3 rounded-xl btn-violet font-bold text-xs flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-sparkles"></i>
+                            <span>Analyze Alignment & Compute Score</span>
+                        </button>
+
+                        <!-- Screening Result Card -->
+                        <div id="screening-result-card" class="p-5 rounded-xl border border-violet-200 bg-violet-50/40 hidden space-y-4">
+                            <div class="flex items-center justify-between border-b border-violet-100 pb-3">
+                                <div>
+                                    <h4 id="res-candidate-name" class="font-bold text-base text-slate-900">Aman Kumar</h4>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span id="res-experience-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-violet-600 text-white">Fresher</span>
+                                        <span id="res-yoe" class="text-xs text-slate-500 font-mono">1.0 yrs exp</span>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <div id="res-score-badge" class="w-14 h-14 rounded-full border-2 border-violet-600 bg-white flex items-center justify-center text-base font-bold text-violet-700 font-mono shadow-sm">
+                                        87%
+                                    </div>
+                                    <span class="text-[9px] uppercase font-bold text-violet-700 block mt-0.5">Match</span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 text-xs">
+                                <div>
+                                    <span class="font-semibold text-slate-700 uppercase tracking-wider text-[10px]">AI Evaluation:</span>
+                                    <p id="res-summary-text" class="text-xs text-slate-700 mt-1 bg-white p-3 rounded-lg border border-violet-100 leading-relaxed"></p>
+                                </div>
+                                <div>
+                                    <span class="font-semibold text-emerald-700 uppercase tracking-wider text-[10px]">Matched Skills:</span>
+                                    <div id="res-matched-skills" class="flex flex-wrap gap-1 mt-1"></div>
+                                </div>
+                            </div>
+
+                            <button id="btn-launch-interview" class="w-full py-3 rounded-xl btn-violet font-bold text-xs flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-video"></i>
+                                <span>Proceed to Live AI Voice Interview</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW 2: AI INTERVIEW ROOM (MATCHING IMAGE 2 CENTER CARD) ================= -->
+            <div id="view-interview" class="hidden space-y-4">
+                
+                <!-- Room Header -->
+                <div class="glass-panel-light px-5 py-3 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center space-x-3">
+                        <button onclick="switchMainTab('dashboard')" class="text-xs text-slate-500 hover:text-slate-900 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Back</span>
+                        </button>
+                        <span class="text-slate-300">|</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                            <span class="font-bold text-sm text-slate-900">AI Interview Room</span>
+                            <span class="text-xs bg-red-100 text-red-700 font-mono px-2 py-0.5 rounded font-bold">Live • 14:32</span>
+                        </div>
+                    </div>
+
+                    <!-- Middle Inactivity Answer Countdown Timer (50s) -->
+                    <div id="silence-timer-container" class="hidden items-center space-x-2 bg-amber-50 text-amber-800 border border-amber-300 px-3 py-1 rounded-lg text-xs font-mono">
+                        <i class="fa-solid fa-hourglass-half text-amber-600 animate-spin"></i>
+                        <span>Answer Timer:</span>
+                        <span id="silence-timer-display" class="font-bold">50s</span>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <span id="question-tracker" class="text-xs font-mono font-bold bg-violet-100 text-violet-800 px-2.5 py-1 rounded-lg">
+                            Q 01 / 10
+                        </span>
+                        <button id="btn-end-interview" class="px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition">
+                            End Interview
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Studio Stage (Dark Themed Cinematic Room) -->
+                <div class="bg-[#0C0A20] rounded-2xl p-5 border border-white/10 shadow-2xl relative overflow-hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+                        
+                        <!-- Left: AI Interviewer Video Avatar (8 Cols) -->
+                        <div class="lg:col-span-8 bg-[#120F2D] rounded-xl p-5 border border-white/10 flex flex-col justify-between min-h-[460px] relative overflow-hidden">
+                            <!-- Top AI Tag -->
+                            <div class="flex items-center justify-between text-xs text-white pb-3 border-b border-white/10">
+                                <span class="flex items-center gap-2 font-bold">
+                                    <span class="w-2 h-2 rounded-full bg-violet-400 animate-pulse"></span>
+                                    <span>AI Interviewer</span>
+                                </span>
+                                <div id="ai-status-label" class="font-mono text-xs text-violet-300 font-semibold">
+                                    Ready
+                                </div>
+                            </div>
+
+                            <!-- Center AI Avatar & Reactive Voice Glow -->
+                            <div class="my-auto flex flex-col items-center justify-center py-6 relative">
+                                <div class="absolute inset-0 bg-violet-600/25 filter blur-3xl rounded-full"></div>
+                                <div class="w-36 h-36 rounded-full overflow-hidden border-2 border-violet-400 shadow-2xl relative z-10 ring-4 ring-violet-500/20">
+                                    <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80" alt="AI Interviewer" class="w-full h-full object-cover">
+                                </div>
+                            </div>
+
+                            <!-- Question Caption & Equalizer Bubble -->
+                            <div class="bg-black/80 backdrop-blur-md p-4 rounded-xl border border-white/15 flex items-center space-x-3 text-white">
+                                <div id="waveform-eq" class="wave-active flex items-center gap-1 shrink-0">
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                </div>
+                                <p id="ai-active-question-text" class="text-xs sm:text-sm font-medium leading-relaxed text-slate-100">
+                                    Welcome to your technical evaluation. Could you introduce yourself and walk me through a recent project where you used Python and modern APIs?
+                                </p>
+                            </div>
+
+                            <!-- Bottom Call Controls Bar -->
+                            <div class="flex items-center justify-center space-x-3.5 pt-4 border-t border-white/10">
+                                <button id="btn-mic-record" class="call-btn bg-violet-600 border-violet-500 hover:bg-violet-700" title="Candidate Microphone (Hands-Free Auto Active)">
+                                    <i class="fa-solid fa-microphone"></i>
+                                </button>
+                                <button class="call-btn" title="Toggle Camera">
+                                    <i class="fa-solid fa-video"></i>
+                                </button>
+                                <button onclick="document.getElementById('btn-end-interview').click()" class="call-btn call-btn-danger" title="End Session">
+                                    <i class="fa-solid fa-phone-slash"></i>
+                                </button>
+                                <button class="call-btn" title="Captions [CC]" onclick="toggleTranscriptBox()">
+                                    <i class="fa-solid fa-closed-captioning"></i>
+                                </button>
+                                <button class="call-btn" title="Settings">
+                                    <i class="fa-solid fa-gear"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Right: Candidate Camera & Live Proctoring HUD (4 Cols) -->
+                        <div class="lg:col-span-4 space-y-4 flex flex-col justify-between">
+                            
+                            <!-- Live Proctoring HUD -->
+                            <div class="bg-[#120F2D] p-4 rounded-xl border border-white/10 space-y-3">
+                                <div class="flex items-center justify-between text-xs font-bold text-white border-b border-white/10 pb-2">
+                                    <span class="flex items-center gap-1.5 text-emerald-400">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                        Live Proctoring
+                                    </span>
+                                    <span id="strike-badge" class="font-mono text-[10px] bg-red-950/60 border border-red-500/50 text-red-400 px-2 py-0.5 rounded">
+                                        0/3 Strikes
+                                    </span>
+                                </div>
+
+                                <div class="space-y-2 text-xs">
+                                    <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                                        <span class="text-slate-300 flex items-center gap-1.5"><i class="fa-regular fa-eye text-slate-400"></i>Eye Gaze</span>
+                                        <span id="hud-gaze-status" class="text-emerald-400 font-bold font-mono">✓ Normal</span>
+                                    </div>
+                                    <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                                        <span class="text-slate-300 flex items-center gap-1.5"><i class="fa-solid fa-mobile-screen text-slate-400"></i>Mobile Phone</span>
+                                        <span id="hud-phone-status" class="text-emerald-400 font-bold font-mono">✓ Not Detected</span>
+                                    </div>
+                                    <div class="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-white/5">
+                                        <span class="text-slate-300 flex items-center gap-1.5"><i class="fa-regular fa-window-maximize text-slate-400"></i>Tab Activity</span>
+                                        <span id="hud-tab-status" class="text-emerald-400 font-bold font-mono">✓ In Focus</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Real Candidate Webcam PiP Feed -->
+                            <div class="bg-black rounded-xl overflow-hidden aspect-[4/3] relative border border-white/10 flex items-center justify-center">
+                                <video id="webcam-feed" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                                <canvas id="proctor-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+                                <span class="absolute bottom-2 left-2 text-[10px] bg-black/70 px-2 py-0.5 rounded text-white font-mono flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                    Candidate Live Feed
+                                </span>
+                            </div>
+
+                            <!-- Live Transcript Drawer -->
+                            <div id="transcript-toggle-area" class="bg-[#120F2D] p-3 rounded-xl border border-white/10 text-xs text-slate-300 max-h-36 overflow-y-auto space-y-2">
+                                <div class="font-bold text-white uppercase text-[10px] tracking-wider border-b border-white/10 pb-1 flex items-center justify-between">
+                                    <span>Real-Time Transcript</span>
+                                    <span class="text-[9px] text-slate-400">Auto-transcribed</span>
+                                </div>
+                                <div id="live-transcript-feed" class="space-y-1.5 font-mono text-[11px]">
+                                    <p class="text-slate-500 italic">Conversation transcripts will appear here...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= VIEW 3: EVALUATION REPORT (MATCHING IMAGE 2 RIGHT CARD) ================= -->
+            <div id="view-report" class="hidden space-y-6">
+                
+                <!-- Report Top Bar -->
+                <div class="glass-panel-light px-5 py-3.5 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center space-x-3">
+                        <button onclick="switchMainTab('dashboard')" class="text-xs text-slate-500 hover:text-slate-900 font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Back to Dashboard</span>
+                        </button>
+                        <span class="text-slate-300">|</span>
+                        <h3 class="font-bold text-sm text-slate-900">Evaluation Report</h3>
+                    </div>
+
+                    <div class="flex items-center space-x-2.5">
+                        <button onclick="window.print()" class="btn-glass text-xs py-1.5 px-3 bg-white text-slate-700 border-slate-300">
+                            <i class="fa-solid fa-download mr-1"></i>Download PDF
+                        </button>
+                        <button onclick="navigator.clipboard.writeText(window.location.href); alert('Share link copied to clipboard!');" class="btn-violet text-xs py-1.5 px-3">
+                            <i class="fa-solid fa-share-nodes mr-1"></i>Share
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Candidate Profile Card Header -->
+                <div class="glass-panel-light p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-slate-200">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80" alt="Aman Kumar" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 id="report-candidate-name" class="text-lg font-bold text-slate-900">Aman Kumar</h3>
+                                <span id="report-decision-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                                    ✓ Shortlisted
+                                </span>
+                            </div>
+                            <p id="report-target-role" class="text-xs text-slate-500 font-medium mt-0.5">AI & Full Stack Engineer (L2)</p>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">JD Match Score</span>
+                        <div id="report-jd-match-score" class="text-2xl font-bold text-violet-700 font-mono">87%</div>
+                    </div>
+                </div>
+
+                <!-- Report Sub-Tabs -->
+                <div class="flex items-center space-x-6 border-b border-slate-200 text-xs font-semibold text-slate-500">
+                    <button class="pb-2 text-violet-600 border-b-2 border-violet-600">Summary</button>
+                    <button class="pb-2 hover:text-slate-800">Interview Transcript</button>
+                    <button class="pb-2 hover:text-slate-800">Proctoring Logs</button>
+                </div>
+
+                <!-- Overall Score & Evaluation Breakdown Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                    
+                    <!-- Overall Score Circular Gauge (4 Cols) -->
+                    <div class="md:col-span-4 glass-panel-light p-6 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Overall Score</h4>
+                        
+                        <div class="relative w-32 h-32 flex items-center justify-center">
+                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" stroke="#E2E8F0" stroke-width="8" fill="transparent"/>
+                                <circle id="report-score-circle" cx="50" cy="50" r="40" stroke="#10B981" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="35" stroke-linecap="round" fill="transparent"/>
+                            </svg>
+                            <div class="absolute flex flex-col items-center justify-center text-center">
+                                <span id="report-overall-score-pct" class="text-2xl font-black text-slate-900 font-mono">86%</span>
+                                <span class="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">(Excellent)</span>
+                            </div>
+                        </div>
+
+                        <p class="text-[11px] text-slate-500">Composite score based on technical depth, role alignment, and communication.</p>
+                    </div>
+
+                    <!-- Evaluation Breakdown Bars (8 Cols) -->
+                    <div class="md:col-span-8 glass-panel-light p-6 rounded-2xl space-y-3.5">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Evaluation Breakdown</h4>
+                        
+                        <div class="space-y-3 text-xs">
+                            <div>
+                                <div class="flex justify-between font-semibold text-slate-800 mb-1">
+                                    <span><i class="fa-solid fa-code text-violet-600 mr-1.5"></i>Technical Skills</span>
+                                    <span id="rep-tech-score" class="font-mono text-emerald-600 font-bold">88%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 88%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between font-semibold text-slate-800 mb-1">
+                                    <span><i class="fa-solid fa-puzzle-piece text-violet-600 mr-1.5"></i>Problem Solving</span>
+                                    <span id="rep-problem-score" class="font-mono text-emerald-600 font-bold">85%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between font-semibold text-slate-800 mb-1">
+                                    <span><i class="fa-solid fa-comments text-violet-600 mr-1.5"></i>Communication</span>
+                                    <span id="rep-comm-score" class="font-mono text-emerald-600 font-bold">84%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 84%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between font-semibold text-slate-800 mb-1">
+                                    <span><i class="fa-solid fa-user-check text-violet-600 mr-1.5"></i>Role Fit</span>
+                                    <span id="rep-fit-score" class="font-mono text-emerald-600 font-bold">87%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 87%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Recommendation Card (Light Violet Banner) -->
+                <div class="p-5 rounded-2xl bg-violet-50 border border-violet-200 flex items-start space-x-3.5">
+                    <div class="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-sparkles text-xs"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-violet-900 uppercase tracking-wider">AI Recommendation</h4>
+                        <p id="report-rec-text" class="text-xs text-violet-950 mt-1 leading-relaxed font-medium">
+                            Strong match for the role. Good technical depth, clear communication, and relevant project experience. Candidate demonstrated solid problem-solving methodologies and architectural clarity.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Q&A Evaluation Log Accordion -->
+                <div class="glass-panel-light p-6 rounded-2xl space-y-4">
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Questions & Answers Critique</h4>
+                    <div id="report-qa-container" class="space-y-3">
+                        <!-- Dynamically populated Q&A items -->
+                    </div>
+                </div>
+
+                <!-- Proctoring Logs Timeline with Proof Snapshots -->
+                <div class="glass-panel-light p-6 rounded-2xl space-y-4">
+                    <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
+                        <span>Proctoring Incident Timeline</span>
+                        <span id="report-strikes-count-badge" class="font-normal font-mono text-slate-500">0 Incidents Logged</span>
+                    </h4>
+                    <div id="report-violations-timeline" class="space-y-3"></div>
+                </div>
+
+                <!-- Recruiter Action Decision Panel -->
+                <div class="glass-panel-light p-5 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+                    <span class="text-xs text-slate-600 font-medium">Record final recruiter hiring decision:</span>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="submitRecruiterDecision('APPROVED')" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition">
+                            Approve for Final Round
+                        </button>
+                        <button onclick="submitRecruiterDecision('AUDIT_REQUIRED')" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition">
+                            Request Follow-Up
+                        </button>
+                        <button onclick="submitRecruiterDecision('REJECTED')" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition">
+                            Reject Candidate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= PERMISSION CHECK MODAL ================= -->
+    <div id="permission-modal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4 text-left border border-slate-200">
+            <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
+                <div class="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900">Device & Proctoring Permissions</h3>
+                    <p class="text-[11px] text-slate-500">Grant camera, mic & screen share before interview.</p>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <span class="text-slate-800 font-semibold"><i class="fa-solid fa-video text-violet-600 mr-2"></i>Webcam Camera</span>
+                    <span id="perm-cam-status" class="text-[10px] text-slate-500 font-mono">Pending</span>
+                </div>
+                <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <span class="text-slate-800 font-semibold"><i class="fa-solid fa-microphone text-violet-600 mr-2"></i>Microphone Audio</span>
+                    <span id="perm-mic-status" class="text-[10px] text-slate-500 font-mono">Pending</span>
+                </div>
+                <div class="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <span class="text-slate-800 font-semibold"><i class="fa-solid fa-desktop text-violet-600 mr-2"></i>Screen Sharing</span>
+                    <span id="perm-screen-status" class="text-[10px] text-slate-500 font-mono">Pending</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button id="btn-cancel-permission" class="btn-glass text-xs bg-slate-100 text-slate-700 border-slate-300">Cancel</button>
+                <button id="btn-grant-all-permissions" class="btn-violet text-xs py-2 px-4">Grant Access & Enter</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PROCTORING 3-STRIKE POPUP ================= -->
+    <div id="proctor-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div id="proctor-modal-box" class="bg-white border-2 border-red-500 max-w-md w-full rounded-2xl p-6 shadow-2xl text-center space-y-4">
+            <div id="proctor-modal-icon" class="w-12 h-12 mx-auto rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h4 id="proctor-modal-title" class="text-base font-bold text-slate-900">Proctoring Warning (1/3)</h4>
+                <p id="proctor-modal-msg" class="text-xs text-slate-600 mt-2 leading-relaxed">
+                    Suspicious activity detected. Please keep eyes on the screen and do not switch windows.
+                </p>
+            </div>
+            <div class="pt-2">
+                <button id="btn-dismiss-modal" class="w-full py-2.5 rounded-xl bg-slate-900 text-white font-semibold text-xs hover:bg-slate-800 transition">
+                    I Acknowledge & Return to Room
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="tts-audio-player" class="hidden"></audio>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/interview.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm/vision_bundle.js" crossorigin="anonymous"></script>
+    <script src="/static/js/proctoring.js"></script>
+</body>
+</html>
