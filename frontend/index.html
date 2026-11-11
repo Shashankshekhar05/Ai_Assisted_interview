@@ -11,10 +11,10 @@
     <!-- Design System CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="bg-[#090818] text-slate-100 antialiased flex flex-col min-h-screen selection:bg-violet-600 selection:text-white">
+<body class="bg-[#F8FAFC] text-slate-900 antialiased flex flex-col min-h-screen selection:bg-violet-600 selection:text-white">
 
     <!-- ================= STICKY TOP NAVIGATION ================= -->
-    <header class="bg-[#0D0B24]/95 backdrop-blur-md border-b border-white/10 sticky top-0 z-50 px-4 sm:px-6 py-3 flex items-center justify-between">
+    <header class="bg-[#0D0B24] border-b border-white/10 sticky top-0 z-50 px-4 sm:px-8 py-3 flex items-center justify-between shadow-lg">
         <!-- Brand Logo & Live Status -->
         <div class="flex items-center space-x-3 cursor-pointer" onclick="switchMainTab('dashboard')">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 text-white flex items-center justify-center font-bold text-base shadow-lg shadow-violet-500/30">
@@ -44,63 +44,68 @@
 
         <!-- Right Quick Actions -->
         <div class="flex items-center space-x-2.5">
-            <button onclick="focusResumeForm()" class="btn-violet text-xs py-2 px-3.5 shadow-md shadow-violet-600/30">
-                <i class="fa-solid fa-plus text-[10px]"></i>
+            <button onclick="focusResumeForm()" class="btn-violet text-xs py-2 px-4 shadow-md shadow-violet-600/30">
+                <i class="fa-solid fa-plus text-[11px] mr-1.5"></i>
                 <span class="hidden sm:inline">Screen Candidate</span>
             </button>
         </div>
     </header>
 
     <!-- ================= MAIN APPLICATION PLATFORM (STARTS IMMEDIATELY, NO BLANK SPACES) ================= -->
-    <main class="flex-1 bg-[#F8FAFC] text-slate-900 px-4 sm:px-6 py-6 min-h-screen">
-        <div class="max-w-7xl mx-auto space-y-6">
+    <main class="flex-1 bg-[#F8FAFC] text-slate-900 px-4 sm:px-8 py-6 w-full max-w-[1440px] mx-auto min-h-screen">
+        <div class="space-y-6">
 
             <!-- ================= VIEW 1: RECRUITER DASHBOARD ================= -->
             <div id="view-dashboard" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 
                 <!-- Left Recruiter Sidebar (3 Cols) -->
-                <div class="lg:col-span-3 glass-panel-light rounded-2xl p-4 space-y-6 border border-slate-200 shadow-sm">
-                    <div class="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
-                        <div class="w-7 h-7 rounded-lg bg-violet-600 text-white flex items-center justify-center text-xs">
-                            <i class="fa-solid fa-robot"></i>
+                <div class="lg:col-span-3 glass-panel-light rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between min-h-[580px] sticky top-20">
+                    <div class="space-y-6">
+                        <div class="flex items-center space-x-2.5 pb-4 border-b border-slate-100">
+                            <div class="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center text-sm shadow">
+                                <i class="fa-solid fa-robot"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-sm text-slate-900 block leading-tight">Recruitment Hub</span>
+                                <span class="text-[10px] text-slate-400">Enterprise Edition</span>
+                            </div>
                         </div>
-                        <span class="font-bold text-sm text-slate-800">Recruitment Hub</span>
-                    </div>
 
-                    <nav class="space-y-1 text-xs font-semibold">
-                        <a href="javascript:void(0)" onclick="switchMainTab('dashboard')" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg bg-violet-50 text-violet-700">
-                            <i class="fa-solid fa-chart-pie w-4 text-center"></i>
-                            <span>Dashboard</span>
-                        </a>
-                        <a href="javascript:void(0)" onclick="focusResumeForm()" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
-                            <i class="fa-solid fa-briefcase w-4 text-center"></i>
-                            <span>Jobs (Screen & Match)</span>
-                        </a>
-                        <a href="javascript:void(0)" onclick="focusCandidatePreview()" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
-                            <i class="fa-solid fa-users w-4 text-center"></i>
-                            <span>Candidates</span>
-                        </a>
-                        <a href="javascript:void(0)" onclick="switchMainTab('interview')" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
-                            <i class="fa-solid fa-video w-4 text-center"></i>
-                            <span>Interviews</span>
-                        </a>
-                        <a href="javascript:void(0)" onclick="switchMainTab('report')" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
-                            <i class="fa-solid fa-file-invoice w-4 text-center"></i>
-                            <span>Reports</span>
-                        </a>
-                        <a href="javascript:void(0)" class="flex items-center space-x-2.5 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition">
-                            <i class="fa-solid fa-gear w-4 text-center"></i>
-                            <span>Settings</span>
-                        </a>
-                    </nav>
+                        <nav class="space-y-1.5 text-xs font-semibold">
+                            <a href="javascript:void(0)" onclick="switchMainTab('dashboard')" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl bg-violet-50 text-violet-700 shadow-sm border border-violet-100/50">
+                                <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+                                <span>Dashboard</span>
+                            </a>
+                            <a href="javascript:void(0)" onclick="focusResumeForm()" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+                                <i class="fa-solid fa-briefcase w-4 text-center"></i>
+                                <span>Jobs (Screen & Match)</span>
+                            </a>
+                            <a href="javascript:void(0)" onclick="focusCandidatePreview()" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+                                <i class="fa-solid fa-users w-4 text-center"></i>
+                                <span>Candidates</span>
+                            </a>
+                            <a href="javascript:void(0)" onclick="switchMainTab('interview')" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+                                <i class="fa-solid fa-video w-4 text-center"></i>
+                                <span>Interviews</span>
+                            </a>
+                            <a href="javascript:void(0)" onclick="switchMainTab('report')" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+                                <i class="fa-solid fa-file-invoice w-4 text-center"></i>
+                                <span>Reports</span>
+                            </a>
+                            <a href="javascript:void(0)" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition">
+                                <i class="fa-solid fa-gear w-4 text-center"></i>
+                                <span>Settings</span>
+                            </a>
+                        </nav>
+                    </div>
 
                     <!-- Recruiter Profile Footer -->
                     <div class="pt-4 border-t border-slate-100 flex items-center space-x-3">
-                        <div class="w-9 h-9 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-xs shadow">
+                        <div class="w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center font-bold text-xs shadow">
                             SS
                         </div>
                         <div class="overflow-hidden">
-                            <div class="text-xs font-bold text-slate-800 truncate">Shashank S.</div>
+                            <div class="text-xs font-bold text-slate-900 truncate">Shashank S.</div>
                             <div class="text-[10px] text-slate-400">Recruitment Lead</div>
                         </div>
                     </div>
@@ -110,133 +115,151 @@
                 <div class="lg:col-span-9 space-y-6">
                     
                     <!-- Dashboard Header & Tagline -->
-                    <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-1">
                         <div>
-                            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-800 text-[11px] font-bold mb-1">
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-100 text-violet-800 text-[11px] font-bold mb-1.5 shadow-sm">
                                 <i class="fa-solid fa-sparkles text-violet-600"></i>
                                 AI-Powered Hiring Suite
                             </div>
-                            <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Recruiter Dashboard</h2>
-                            <p class="text-xs text-slate-500">Automate interviews, screen candidate resumes, and evaluate technical depth in real time.</p>
+                            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Recruiter Dashboard</h2>
+                            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">Automate interviews, screen candidate resumes, and evaluate technical depth in real time.</p>
                         </div>
-                        <button onclick="focusResumeForm()" class="btn-violet text-xs py-2 px-3.5">
-                            <i class="fa-solid fa-plus text-[10px]"></i>
-                            <span>+ Create Job & Screen</span>
+                        <button onclick="focusResumeForm()" class="btn-violet text-xs py-2.5 px-4 shadow-md shadow-violet-600/30">
+                            <i class="fa-solid fa-plus text-[11px] mr-1.5"></i>
+                            <span>Create Job & Screen</span>
                         </button>
                     </div>
 
                     <!-- 4 Stat Overview Cards with Animated Roll-Ups -->
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                        <div class="glass-panel-light spotlight-card p-4 rounded-xl space-y-2 border border-slate-200">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="glass-panel-light spotlight-card p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between h-[115px] hover:shadow-md transition">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-slate-500 font-medium">Active Jobs</span>
-                                <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xs">
+                                <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider text-[11px]">Active Jobs</span>
+                                <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xs shadow-sm">
                                     <i class="fa-solid fa-briefcase"></i>
                                 </div>
                             </div>
-                            <div class="text-2xl font-bold text-slate-900 font-mono stat-counter" data-target="12">12</div>
+                            <div class="text-3xl font-extrabold text-slate-900 font-mono stat-counter tracking-tight" data-target="12">12</div>
                         </div>
 
-                        <div class="glass-panel-light spotlight-card p-4 rounded-xl space-y-2 border border-slate-200">
+                        <div class="glass-panel-light spotlight-card p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between h-[115px] hover:shadow-md transition">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-slate-500 font-medium">Total Candidates</span>
-                                <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
+                                <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider text-[11px]">Total Candidates</span>
+                                <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xs shadow-sm">
                                     <i class="fa-solid fa-users"></i>
                                 </div>
                             </div>
-                            <div class="text-2xl font-bold text-slate-900 font-mono stat-counter" data-target="248">248</div>
+                            <div class="text-3xl font-extrabold text-slate-900 font-mono stat-counter tracking-tight" data-target="248">248</div>
                         </div>
 
-                        <div class="glass-panel-light spotlight-card p-4 rounded-xl space-y-2 border border-slate-200">
+                        <div class="glass-panel-light spotlight-card p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between h-[115px] hover:shadow-md transition">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-slate-500 font-medium">Interviews Today</span>
-                                <div class="w-7 h-7 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center text-xs">
+                                <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider text-[11px]">Interviews Today</span>
+                                <div class="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center text-xs shadow-sm">
                                     <i class="fa-solid fa-calendar-check"></i>
                                 </div>
                             </div>
-                            <div class="text-2xl font-bold text-slate-900 font-mono stat-counter" data-target="32">32</div>
+                            <div class="text-3xl font-extrabold text-slate-900 font-mono stat-counter tracking-tight" data-target="32">32</div>
                         </div>
 
-                        <div class="glass-panel-light spotlight-card p-4 rounded-xl space-y-2 border border-slate-200">
+                        <div class="glass-panel-light spotlight-card p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between h-[115px] hover:shadow-md transition">
                             <div class="flex items-center justify-between">
-                                <span class="text-xs text-slate-500 font-medium">Shortlisted</span>
-                                <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
+                                <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider text-[11px]">Shortlisted</span>
+                                <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs shadow-sm">
                                     <i class="fa-solid fa-circle-check"></i>
                                 </div>
                             </div>
-                            <div class="text-2xl font-bold text-emerald-600 font-mono stat-counter" data-target="18">18</div>
+                            <div class="text-3xl font-extrabold text-emerald-600 font-mono stat-counter tracking-tight" data-target="18">18</div>
                         </div>
                     </div>
 
                     <!-- Middle Two Sub-Panels: Hiring Funnel + Recent Activity -->
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
                         
                         <!-- Hiring Funnel Visualization (5 Cols) -->
-                        <div class="md:col-span-5 glass-panel-light p-4 rounded-xl space-y-3 border border-slate-200">
-                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
-                                <span>Hiring Funnel</span>
-                                <span class="text-[10px] text-slate-400 font-mono font-normal">Conversion Flow</span>
+                        <div class="lg:col-span-5 glass-panel-light p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between h-full">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between pb-3 border-b border-slate-100">
+                                <span class="flex items-center gap-2">
+                                    <i class="fa-solid fa-filter text-violet-600"></i>
+                                    Hiring Funnel
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Conversion</span>
                             </h4>
-                            <div class="space-y-2 pt-1 font-mono">
-                                <div class="funnel-stage bg-indigo-100/70 text-indigo-900 border border-indigo-200">
-                                    <span>Applied</span>
-                                    <span class="font-bold">248</span>
+                            <div class="space-y-2.5 pt-3 flex-1 flex flex-col justify-around">
+                                <div class="funnel-stage bg-indigo-100/80 text-indigo-950 border border-indigo-200">
+                                    <span class="font-medium text-xs">Applied</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-semibold text-indigo-600 bg-white/80 px-2 py-0.5 rounded-full font-mono">100%</span>
+                                        <span class="font-bold text-xs font-mono">248</span>
+                                    </div>
                                 </div>
-                                <div class="funnel-stage bg-violet-100/70 text-violet-900 border border-violet-200 w-[88%] mx-auto">
-                                    <span>Screened</span>
-                                    <span class="font-bold">196</span>
+                                <div class="funnel-stage bg-violet-100/80 text-violet-950 border border-violet-200 w-[90%] mx-auto">
+                                    <span class="font-medium text-xs">Screened</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-semibold text-violet-600 bg-white/80 px-2 py-0.5 rounded-full font-mono">79%</span>
+                                        <span class="font-bold text-xs font-mono">196</span>
+                                    </div>
                                 </div>
-                                <div class="funnel-stage bg-purple-100/70 text-purple-900 border border-purple-200 w-[72%] mx-auto">
-                                    <span>Interviewed</span>
-                                    <span class="font-bold">72</span>
+                                <div class="funnel-stage bg-purple-100/80 text-purple-950 border border-purple-200 w-[78%] mx-auto">
+                                    <span class="font-medium text-xs">Interviewed</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-semibold text-purple-600 bg-white/80 px-2 py-0.5 rounded-full font-mono">29%</span>
+                                        <span class="font-bold text-xs font-mono">72</span>
+                                    </div>
                                 </div>
-                                <div class="funnel-stage bg-emerald-100 text-emerald-900 border border-emerald-300 w-[55%] mx-auto">
-                                    <span>Shortlisted</span>
-                                    <span class="font-bold">18</span>
+                                <div class="funnel-stage bg-emerald-100 text-emerald-950 border border-emerald-300 w-[64%] mx-auto">
+                                    <span class="font-medium text-xs">Shortlisted</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] font-semibold text-emerald-700 bg-white/80 px-2 py-0.5 rounded-full font-mono">7%</span>
+                                        <span class="font-bold text-xs font-mono">18</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Recent Activity Section (7 Cols) -->
-                        <div class="md:col-span-7 glass-panel-light p-4 rounded-xl space-y-3 border border-slate-200">
-                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
-                                <span>Recent Candidate Activity</span>
-                                <span class="text-[10px] text-slate-400 font-mono font-normal">Live Queue</span>
+                        <div class="lg:col-span-7 glass-panel-light p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between h-full">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between pb-3 border-b border-slate-100">
+                                <span class="flex items-center gap-2">
+                                    <i class="fa-solid fa-clock-rotate-left text-violet-600"></i>
+                                    Recent Candidate Activity
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-semibold uppercase">Live Queue</span>
                             </h4>
-                            <div class="space-y-2.5 text-xs">
-                                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition border border-slate-100">
-                                    <div class="flex items-center space-x-2.5">
-                                        <div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+                            <div class="space-y-3 pt-3 flex-1 flex flex-col justify-around">
+                                <div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition border border-slate-100">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-9 h-9 rounded-full bg-slate-200 overflow-hidden shadow-sm">
                                             <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-full h-full object-cover">
                                         </div>
                                         <div>
-                                            <div class="font-bold text-slate-900">Rahul Verma</div>
+                                            <div class="font-bold text-xs text-slate-900">Rahul Verma</div>
                                             <div class="text-[10px] text-emerald-600 font-semibold">Interview Completed</div>
                                         </div>
                                     </div>
                                     <span class="text-[10px] text-slate-400 font-mono">2 min ago</span>
                                 </div>
 
-                                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition border border-slate-100">
-                                    <div class="flex items-center space-x-2.5">
-                                        <div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+                                <div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition border border-slate-100">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-9 h-9 rounded-full bg-slate-200 overflow-hidden shadow-sm">
                                             <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-full h-full object-cover">
                                         </div>
                                         <div>
-                                            <div class="font-bold text-slate-900">Priya Singh</div>
+                                            <div class="font-bold text-xs text-slate-900">Priya Singh</div>
                                             <div class="text-[10px] text-violet-600 font-semibold">Shortlisted</div>
                                         </div>
                                     </div>
                                     <span class="text-[10px] text-slate-400 font-mono">15 min ago</span>
                                 </div>
 
-                                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition border border-slate-100">
-                                    <div class="flex items-center space-x-2.5">
-                                        <div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+                                <div class="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition border border-slate-100">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-9 h-9 rounded-full bg-slate-200 overflow-hidden shadow-sm">
                                             <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80" alt="Avatar" class="w-full h-full object-cover">
                                         </div>
                                         <div>
-                                            <div class="font-bold text-slate-900">Aman Kumar</div>
+                                            <div class="font-bold text-xs text-slate-900">Aman Kumar</div>
                                             <div class="text-[10px] text-indigo-600 font-semibold">Ready for Voice Interview</div>
                                         </div>
                                     </div>
@@ -247,7 +270,7 @@
                     </div>
 
                     <!-- Embedded Interactive Resume & JD Screener -->
-                    <div id="resume-screener-card" class="glass-panel-light p-6 rounded-2xl border-2 border-violet-200 shadow-sm space-y-4">
+                    <div id="resume-screener-card" class="glass-panel-light p-6 sm:p-7 rounded-2xl border-2 border-violet-200 shadow-sm space-y-5">
                         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                             <div>
                                 <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
