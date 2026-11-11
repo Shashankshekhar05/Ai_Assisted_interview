@@ -24,13 +24,22 @@ function switchMainTab(tabName) {
         const btnEl = document.getElementById(`tab-btn-${t}`) || document.getElementById(`nav-btn-${t}`);
         
         if (t === tabName) {
-            if (viewEl) viewEl.classList.remove('hidden');
+            if (viewEl) {
+                viewEl.classList.remove('hidden');
+                viewEl.classList.remove('animate-fade-in-up');
+                void viewEl.offsetWidth; // Force DOM reflow to trigger animation smoothly
+                viewEl.classList.add('animate-fade-in-up');
+            }
             if (btnEl) btnEl.classList.add('active');
         } else {
             if (viewEl) viewEl.classList.add('hidden');
             if (btnEl) btnEl.classList.remove('active');
         }
     });
+
+    if (tabName === 'dashboard' && typeof initAnimatedCounters === 'function') {
+        initAnimatedCounters();
+    }
 
     if (tabName === 'report' && appState.sessionId) {
         loadFinalReport();

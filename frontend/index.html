@@ -45,9 +45,15 @@
 
     <!-- ================= 1. HERO SECTION (DARK NAVY / PURPLE GLOW AESTHETIC) ================= -->
     <section id="hero" class="hero-glow-mesh pt-12 pb-20 px-4 sm:px-6 relative overflow-hidden border-b border-white/10">
+        <!-- Background Particle Canvas & Ambient Glowing Orbs -->
+        <canvas id="hero-particle-canvas"></canvas>
+        <div class="ambient-orb ambient-orb-1"></div>
+        <div class="ambient-orb ambient-orb-2"></div>
+        <div class="ambient-orb ambient-orb-3"></div>
+
         <div class="max-w-6xl mx-auto text-center space-y-6 relative z-10">
-            <!-- Pill Tag -->
-            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-950/70 border border-violet-500/30 text-violet-300 text-xs font-semibold shadow-inner">
+            <!-- Pill Tag with Shimmer Effect -->
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-950/70 border border-violet-500/30 text-violet-300 text-xs font-semibold shadow-inner shimmer-badge">
                 <i class="fa-solid fa-sparkles text-violet-400"></i>
                 <span>AI-Powered Hiring Platform</span>
             </div>
@@ -64,9 +70,9 @@
                 An end-to-end AI recruitment platform that matches resumes, conducts voice interviews, prevents cheating, and gives structured, data-driven evaluations.
             </p>
 
-            <!-- CTA Buttons -->
+            <!-- CTA Buttons with Spring Physics -->
             <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <button onclick="switchMainTab('dashboard')" class="btn-violet text-sm py-3 px-6 shadow-xl shadow-violet-600/30">
+                <button onclick="switchMainTab('dashboard')" class="btn-violet btn-magnetic text-sm py-3 px-6 shadow-xl shadow-violet-600/30">
                     <span>Get Started Free</span>
                     <i class="fa-solid fa-arrow-right ml-1"></i>
                 </button>
@@ -76,9 +82,9 @@
                 </button>
             </div>
 
-            <!-- 4 Feature Highlights Grid -->
+            <!-- 4 Feature Highlights Grid with 3D Tilt & Spotlights -->
             <div id="features" class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto pt-6 text-left">
-                <div class="glass-panel-dark p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
+                <div class="glass-panel-dark spotlight-card tilt-3d p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
                     <div class="w-8 h-8 rounded-lg bg-violet-500/20 text-violet-400 flex items-center justify-center text-sm shrink-0">
                         <i class="fa-solid fa-file-lines"></i>
                     </div>
@@ -88,7 +94,7 @@
                     </div>
                 </div>
 
-                <div class="glass-panel-dark p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
+                <div class="glass-panel-dark spotlight-card tilt-3d p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
                     <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm shrink-0">
                         <i class="fa-solid fa-headset"></i>
                     </div>
@@ -98,7 +104,7 @@
                     </div>
                 </div>
 
-                <div class="glass-panel-dark p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
+                <div class="glass-panel-dark spotlight-card tilt-3d p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
                     <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-sm shrink-0">
                         <i class="fa-solid fa-shield-halved"></i>
                     </div>
@@ -108,7 +114,7 @@
                     </div>
                 </div>
 
-                <div class="glass-panel-dark p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
+                <div class="glass-panel-dark spotlight-card tilt-3d p-3.5 rounded-xl border border-white/5 flex items-center space-x-3">
                     <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm shrink-0">
                         <i class="fa-solid fa-chart-pie"></i>
                     </div>
@@ -119,9 +125,19 @@
                 </div>
             </div>
 
-            <!-- ================= LAPTOP MOCKUP SHOWCASE ================= -->
-            <div class="pt-8 max-w-4xl mx-auto">
-                <div class="laptop-chassis cursor-pointer group" onclick="switchMainTab('interview')">
+            <!-- ================= LAPTOP MOCKUP SHOWCASE (WITH BORDER BEAM & FLOATING BADGES) ================= -->
+            <div class="pt-8 max-w-4xl mx-auto relative">
+                <!-- Floating Framer-Motion Style Badges -->
+                <div class="floating-badge floating-badge-top-left hidden sm:inline-flex">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    <span>Live Voice VAD Active</span>
+                </div>
+                <div class="floating-badge floating-badge-bottom-right hidden sm:inline-flex">
+                    <span class="w-2 h-2 rounded-full bg-violet-400"></span>
+                    <span>98% Gaze & Device Verified</span>
+                </div>
+
+                <div class="laptop-chassis border-beam-card spotlight-card cursor-pointer group" onclick="switchMainTab('interview')">
                     <div class="laptop-notch"></div>
                     <div class="bg-[#0F0C24] rounded-xl overflow-hidden border border-white/10 shadow-2xl relative p-4 sm:p-6 text-left">
                         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
@@ -218,6 +234,8 @@
             </div>
         </div>
     </section>
+        </div>
+    </section>
 
     <!-- ================= 2. MAIN APPLICATION PLATFORM ================= -->
     <section id="dashboard-section" class="bg-[#F8FAFC] text-slate-900 py-10 px-4 sm:px-6 flex-1 min-h-[800px]">
@@ -311,46 +329,46 @@
                         </button>
                     </div>
 
-                    <!-- 4 Stat Overview Cards -->
+                    <!-- 4 Stat Overview Cards with Spotlight & Framer-Motion Animated Roll-Ups -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-                        <div class="glass-panel-light p-4 rounded-xl space-y-2">
+                        <div class="glass-panel-light spotlight-card p-4 rounded-xl space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-slate-500 font-medium">Active Jobs</span>
                                 <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xs">
                                     <i class="fa-solid fa-briefcase"></i>
                                 </div>
                             </div>
-                            <div class="text-2xl font-bold text-slate-900 font-mono">12</div>
+                            <div class="text-2xl font-bold text-slate-900 font-mono stat-counter" data-target="12">12</div>
                         </div>
 
-                        <div class="glass-panel-light p-4 rounded-xl space-y-2">
+                        <div class="glass-panel-light spotlight-card p-4 rounded-xl space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-slate-500 font-medium">Total Candidates</span>
                                 <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs">
                                     <i class="fa-solid fa-users"></i>
                                 </div>
                             </div>
-                            <div class="text-2xl font-bold text-slate-900 font-mono">248</div>
+                            <div class="text-2xl font-bold text-slate-900 font-mono stat-counter" data-target="248">248</div>
                         </div>
 
-                        <div class="glass-panel-light p-4 rounded-xl space-y-2">
+                        <div class="glass-panel-light spotlight-card p-4 rounded-xl space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-slate-500 font-medium">Interviews Today</span>
                                 <div class="w-7 h-7 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center text-xs">
                                     <i class="fa-solid fa-calendar-check"></i>
                                 </div>
                             </div>
-                            <div class="text-2xl font-bold text-slate-900 font-mono">32</div>
+                            <div class="text-2xl font-bold text-slate-900 font-mono stat-counter" data-target="32">32</div>
                         </div>
 
-                        <div class="glass-panel-light p-4 rounded-xl space-y-2">
+                        <div class="glass-panel-light spotlight-card p-4 rounded-xl space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-xs text-slate-500 font-medium">Shortlisted</span>
                                 <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs">
                                     <i class="fa-solid fa-circle-check"></i>
                                 </div>
                             </div>
-                            <div class="text-2xl font-bold text-emerald-600 font-mono">18</div>
+                            <div class="text-2xl font-bold text-emerald-600 font-mono stat-counter" data-target="18">18</div>
                         </div>
                     </div>
 
@@ -554,10 +572,13 @@
                                 </div>
                             </div>
 
-                            <!-- Center AI Avatar & Reactive Voice Glow -->
+                            <!-- Center AI Avatar & Reactive Voice Glow with Concentric Aura Rings -->
                             <div class="my-auto flex flex-col items-center justify-center py-6 relative">
-                                <div class="absolute inset-0 bg-violet-600/25 filter blur-3xl rounded-full"></div>
-                                <div class="w-36 h-36 rounded-full overflow-hidden border-2 border-violet-400 shadow-2xl relative z-10 ring-4 ring-violet-500/20">
+                                <div class="absolute inset-0 bg-violet-600/30 filter blur-3xl rounded-full"></div>
+                                <div class="avatar-aura-ring avatar-aura-ring-1"></div>
+                                <div class="avatar-aura-ring avatar-aura-ring-2"></div>
+                                <div class="avatar-aura-ring avatar-aura-ring-3"></div>
+                                <div class="w-36 h-36 rounded-full overflow-hidden border-2 border-violet-400 shadow-2xl relative z-10 ring-4 ring-violet-500/30">
                                     <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80" alt="AI Interviewer" class="w-full h-full object-cover">
                                 </div>
                             </div>
@@ -884,6 +905,7 @@
 
     <!-- Scripts -->
     <script src="/static/js/app.js"></script>
+    <script src="/static/js/motion.js"></script>
     <script src="/static/js/interview.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
