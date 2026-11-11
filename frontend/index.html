@@ -409,18 +409,24 @@
                             </div>
 
                             <!-- Question Caption & Equalizer Bubble -->
-                            <div class="bg-black/80 backdrop-blur-md p-4 rounded-xl border border-white/15 flex items-center space-x-3 text-white">
-                                <div id="waveform-eq" class="wave-active flex items-center gap-1 shrink-0">
-                                    <span class="wave-bar"></span>
-                                    <span class="wave-bar"></span>
-                                    <span class="wave-bar"></span>
-                                    <span class="wave-bar"></span>
-                                    <span class="wave-bar"></span>
-                                    <span class="wave-bar"></span>
+                            <div class="bg-black/80 backdrop-blur-md p-4 rounded-xl border border-white/15 flex items-center justify-between gap-3 text-white">
+                                <div class="flex items-center space-x-3 flex-1 min-w-0">
+                                    <div id="waveform-eq" class="wave-active flex items-center gap-1 shrink-0">
+                                        <span class="wave-bar"></span>
+                                        <span class="wave-bar"></span>
+                                        <span class="wave-bar"></span>
+                                        <span class="wave-bar"></span>
+                                        <span class="wave-bar"></span>
+                                        <span class="wave-bar"></span>
+                                    </div>
+                                    <p id="ai-active-question-text" class="text-xs sm:text-sm font-medium leading-relaxed text-slate-100">
+                                        Welcome to your technical evaluation. Could you introduce yourself and walk me through a recent project where you used Python and modern APIs?
+                                    </p>
                                 </div>
-                                <p id="ai-active-question-text" class="text-xs sm:text-sm font-medium leading-relaxed text-slate-100">
-                                    Welcome to your technical evaluation. Could you introduce yourself and walk me through a recent project where you used Python and modern APIs?
-                                </p>
+                                <button id="btn-replay-audio" onclick="replayCurrentQuestionAudio()" class="shrink-0 px-3 py-1.5 rounded-lg bg-violet-600/90 hover:bg-violet-600 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm active:scale-95 cursor-pointer" title="Listen or Replay AI Voice">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                    <span id="btn-replay-audio-text">Listen</span>
+                                </button>
                             </div>
 
                             <!-- Bottom Call Controls Bar -->

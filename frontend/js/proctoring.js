@@ -34,6 +34,11 @@ document.getElementById('btn-cancel-permission').addEventListener('click', () =>
 });
 
 document.getElementById('btn-grant-all-permissions').addEventListener('click', async () => {
+    // Prime browser audio context & speech synthesis synchronously on direct user gesture
+    if (typeof primeAudioOnUserGesture === 'function') {
+        primeAudioOnUserGesture();
+    }
+
     const btn = document.getElementById('btn-grant-all-permissions');
     const originalText = btn.innerHTML;
     btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Initializing...`;

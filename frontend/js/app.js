@@ -176,6 +176,9 @@ function renderScreeningResults(data, roleTitle) {
     const launchBtn = document.getElementById('btn-launch-interview');
     if (launchBtn) {
         launchBtn.onclick = () => {
+            if (typeof primeAudioOnUserGesture === 'function') {
+                primeAudioOnUserGesture();
+            }
             if (typeof openPermissionModal === 'function') {
                 openPermissionModal();
             } else {

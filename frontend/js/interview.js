@@ -188,19 +188,57 @@ async function startInterviewRoom() {
     fetchFirstQuestion();
 }
 
+// Preload and cache speech synthesis voices
+let availableVoices = [];
+function initSpeechVoices() {
+    if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices() || [];
+        window.speechSynthesis.onvoiceschanged = () => {
+            availableVoices = window.speechSynthesis.getVoices() || [];
+        };
+    }
+}
+initSpeechVoices();
+
+// Store latest question audio & text for replay anytime
+window.lastQuestionAudioBase64 = null;
+window.lastQuestionText = "";
+
 function primeAudioOnUserGesture() {
     try {
         if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const primer = new SpeechSynthesisUtterance('');
-            primer.volume = 0;
-            window.speechSynthesis.speak(primer);
+            window.speechSynthesis.resume();
         }
         if (ttsAudio) {
-            ttsAudio.play().then(() => ttsAudio.pause()).catch(() => {});
+            ttsAudio.muted = false;
+            ttsAudio.volume = 1.0;
+            // Play a silent 1-sample WAV to prime audio engine without making sound
+            if (!ttsAudio.src || ttsAudio.paused) {
+                const silentWav = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+                ttsAudio.src = silentWav;
+                const p = ttsAudio.play();
+                if (p) p.then(() => ttsAudio.pause()).catch(() => {});
+            }
         }
     } catch (e) {}
 }
+
+window.replayCurrentQuestionAudio = function() {
+    primeAudioOnUserGesture();
+    const replayBtn = document.getElementById('btn-replay-audio');
+    if (replayBtn) {
+        replayBtn.classList.remove('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
+    }
+    const replayBtnText = document.getElementById('btn-replay-audio-text');
+    if (replayBtnText) replayBtnText.innerText = "Playing...";
+
+    if (window.lastQuestionAudioBase64 && window.lastQuestionAudioBase64.length > 100) {
+        playAiAudio(window.lastQuestionAudioBase64);
+    } else {
+        const text = window.lastQuestionText || document.getElementById('ai-active-question-text')?.innerText || '';
+        playBrowserSpeechFallback(text);
+    }
+};
 
 async function fetchFirstQuestion() {
     updateAiStatus('AI Thinking...', 'text-amber-400');
@@ -228,6 +266,10 @@ async function fetchFirstQuestion() {
 function handleAiQuestionReceived(data) {
     appState.currentQuestionNumber = data.question_number || appState.currentQuestionNumber;
     
+    // Cache latest audio and question text for manual replay or retry
+    window.lastQuestionAudioBase64 = data.audio_base64 || null;
+    window.lastQuestionText = data.question || "";
+
     // Update Question counter in format Q 01 / 10
     const qNumStr = appState.currentQuestionNumber < 10 ? `0${appState.currentQuestionNumber}` : appState.currentQuestionNumber;
     const maxQStr = appState.maxQuestions < 10 ? `0${appState.maxQuestions}` : appState.maxQuestions;
@@ -238,6 +280,10 @@ function handleAiQuestionReceived(data) {
 
     const speechBanner = document.getElementById('ai-active-question-text');
     if (speechBanner) speechBanner.innerText = data.question;
+
+    // Reset replay button text
+    const replayBtnText = document.getElementById('btn-replay-audio-text');
+    if (replayBtnText) replayBtnText.innerText = "Listen";
 
     // Play TTS audio
     if (data.audio_base64) {
@@ -273,39 +319,59 @@ function playAiAudio(base64Uri) {
     stopSilenceCountdown();
     stopActiveMicrophoneRecording();
 
-    updateAiStatus('AI Speaking...', 'text-indigo-600 font-bold');
+    updateAiStatus('AI Speaking...', 'text-indigo-400 font-bold');
 
     const waveEq = document.getElementById('waveform-eq');
     if (waveEq) waveEq.classList.add('wave-active');
 
+    const replayBtnText = document.getElementById('btn-replay-audio-text');
+    if (replayBtnText) replayBtnText.innerText = "Speaking...";
+
     // Handle in-memory audio playback
     if (base64Uri && base64Uri.length > 100) {
+        ttsAudio.muted = false;
+        ttsAudio.volume = 1.0;
+
+        ttsAudio.onended = () => {
+            if (waveEq) waveEq.classList.remove('wave-active');
+            if (replayBtnText) replayBtnText.innerText = "Replay";
+            onAiQuestionFinishedSpeaking();
+        };
+
+        ttsAudio.onerror = (e) => {
+            console.warn('Audio tag playback error, falling back to Web Speech:', e);
+            if (replayBtnText) replayBtnText.innerText = "Replay";
+            const activeText = window.lastQuestionText || document.getElementById('ai-active-question-text')?.innerText || '';
+            playBrowserSpeechFallback(activeText);
+        };
+
         ttsAudio.src = base64Uri;
         const playPromise = ttsAudio.play();
 
         if (playPromise !== undefined) {
             playPromise.then(() => {
-                // Audio started playing successfully
+                const replayBtn = document.getElementById('btn-replay-audio');
+                if (replayBtn) {
+                    replayBtn.classList.remove('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
+                }
             }).catch(e => {
-                console.warn('Audio auto-play policy restricted, falling back to Web Speech:', e);
-                const activeText = document.getElementById('ai-active-question-text')?.innerText || '';
+                console.warn('Audio auto-play policy restricted by browser:', e);
+                // Highlight Listen button so candidate can click once to listen
+                const replayBtn = document.getElementById('btn-replay-audio');
+                if (replayBtn) {
+                    replayBtn.classList.add('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
+                    if (replayBtnText) replayBtnText.innerText = "🔊 Tap to Listen";
+                }
+                updateAiStatus('Tap "Listen" to hear AI Question', 'text-amber-400 font-bold');
+
+                // Fallback to Web Speech
+                const activeText = window.lastQuestionText || document.getElementById('ai-active-question-text')?.innerText || '';
                 playBrowserSpeechFallback(activeText);
             });
         }
-
-        ttsAudio.onended = () => {
-            if (waveEq) waveEq.classList.remove('wave-active');
-            onAiQuestionFinishedSpeaking();
-        };
-
-        ttsAudio.onerror = (e) => {
-            console.warn('Audio tag playback error, falling back:', e);
-            const activeText = document.getElementById('ai-active-question-text')?.innerText || '';
-            playBrowserSpeechFallback(activeText);
-        };
     } else {
         // Fallback to browser SpeechSynthesis if audio base64 is empty
-        const activeText = document.getElementById('ai-active-question-text')?.innerText || '';
+        const activeText = window.lastQuestionText || document.getElementById('ai-active-question-text')?.innerText || '';
         playBrowserSpeechFallback(activeText);
     }
 }
@@ -316,27 +382,51 @@ function playBrowserSpeechFallback(text) {
 
     if ('speechSynthesis' in window && text) {
         window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+
+        // Select the best natural English voice
+        const voices = availableVoices.length > 0 ? availableVoices : (window.speechSynthesis.getVoices() || []);
+        const enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Jenny') || v.name.includes('Aria') || v.name.includes('Online')))
+                     || voices.find(v => v.lang.startsWith('en'))
+                     || voices[0];
+        if (enVoice) utterance.voice = enVoice;
         
         const waveEq = document.getElementById('waveform-eq');
+        const replayBtnText = document.getElementById('btn-replay-audio-text');
 
         utterance.onstart = () => {
-            updateAiStatus('AI Speaking...', 'text-indigo-600 font-bold');
+            updateAiStatus('AI Speaking...', 'text-indigo-400 font-bold');
             if (waveEq) waveEq.classList.add('wave-active');
+            if (replayBtnText) replayBtnText.innerText = "Speaking...";
         };
 
         utterance.onend = () => {
             if (waveEq) waveEq.classList.remove('wave-active');
+            if (replayBtnText) replayBtnText.innerText = "Replay";
             onAiQuestionFinishedSpeaking();
         };
 
         utterance.onerror = (err) => {
             console.warn('SpeechSynthesis error:', err);
             if (waveEq) waveEq.classList.remove('wave-active');
+            if (replayBtnText) replayBtnText.innerText = "Replay";
             onAiQuestionFinishedSpeaking();
         };
+
+        // Chromium speech bug workaround: keep speaking alive if longer than 15s
+        const resumeTimer = setInterval(() => {
+            if (!window.speechSynthesis.speaking) {
+                clearInterval(resumeTimer);
+            } else {
+                window.speechSynthesis.pause();
+                window.speechSynthesis.resume();
+            }
+        }, 4000);
 
         window.speechSynthesis.speak(utterance);
     } else {
@@ -619,4 +709,12 @@ document.getElementById('btn-end-interview').addEventListener('click', () => {
         loadFinalReport();
     }
 });
+
+// Global user gesture listener: primes audio context on any user interaction anywhere
+document.addEventListener('click', () => {
+    if (typeof primeAudioOnUserGesture === 'function') {
+        primeAudioOnUserGesture();
+    }
+}, { passive: true });
+
 
