@@ -1,5 +1,12 @@
 // AI Interview Pro - Clean, Intuitive App Controller & View Manager
 
+// Filter out benign browser-extension background messaging errors from polluting console
+window.addEventListener('unhandledrejection', (event) => {
+    if (event?.reason?.message && event.reason.message.includes('Could not establish connection. Receiving end does not exist')) {
+        event.preventDefault();
+    }
+});
+
 const appState = {
     sessionId: null,
     candidateName: 'Aman Kumar',
