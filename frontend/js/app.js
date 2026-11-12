@@ -20,16 +20,26 @@ const appState = {
     isInterviewActive: false
 };
 
+let isReportLoading = false;
+let loadedReportSessionId = null;
+
 // Main Tab Switcher (Recruiter Dashboard, AI Interview Room, Evaluation Report)
-function switchMainTab(tabName) {
+function switchMainTab(tabName, triggerFetch = true) {
     // Map aliases
     if (tabName === 'screening') tabName = 'dashboard';
+
+    // Automatically turn off camera, screen share, microphone, and sound if leaving active interview
+    if (tabName !== 'interview' && appState.isInterviewActive) {
+        if (typeof window.stopAllHardwareMedia === 'function') {
+            window.stopAllHardwareMedia();
+        }
+    }
 
     const tabs = ['dashboard', 'interview', 'report'];
     tabs.forEach(t => {
         const viewEl = document.getElementById(`view-${t}`) || document.getElementById(`tab-${t}`);
         const btnEl = document.getElementById(`tab-btn-${t}`) || document.getElementById(`nav-btn-${t}`);
-        
+
         if (t === tabName) {
             if (viewEl) {
                 viewEl.classList.remove('hidden');
@@ -48,7 +58,7 @@ function switchMainTab(tabName) {
         initAnimatedCounters();
     }
 
-    if (tabName === 'report' && appState.sessionId) {
+    if (triggerFetch && tabName === 'report' && appState.sessionId) {
         loadFinalReport();
     }
 }
@@ -197,9 +207,21 @@ function renderScreeningResults(data, roleTitle) {
 }
 
 // Load and Render Final Auditor Dossier (View 3)
-async function loadFinalReport() {
+async function loadFinalReport(forceRefresh = false) {
+    if (!appState.sessionId) return;
     appState.isInterviewActive = false;
-    switchMainTab('report');
+
+    // Switch view tabs safely without re-triggering loadFinalReport
+    switchMainTab('report', false);
+
+    // If report is already loaded for this session and not forced, return immediately
+    if (loadedReportSessionId === appState.sessionId && !forceRefresh) {
+        return;
+    }
+
+    // Guard: Prevent concurrent duplicate in-flight requests
+    if (isReportLoading) return;
+    isReportLoading = true;
 
     const qaContainer = document.getElementById('report-qa-container') || document.getElementById('report-qa-list');
     const timelineContainer = document.getElementById('report-violations-timeline');
@@ -211,25 +233,55 @@ async function loadFinalReport() {
         if (!res.ok) throw new Error('Could not compile report.');
 
         const data = await res.json();
+        loadedReportSessionId = appState.sessionId; // Mark as successfully cached for this session
 
         const candName = document.getElementById('report-candidate-name');
         if (candName) candName.innerText = appState.candidateName;
 
         const roleTitle = document.getElementById('report-target-role') || document.getElementById('report-role-title');
         if (roleTitle) roleTitle.innerText = `${appState.roleTitle} (${appState.experienceLevel} Track)`;
-        
+
         const matchScoreEl = document.getElementById('report-jd-match-score') || document.getElementById('report-match-badge');
         if (matchScoreEl) matchScoreEl.innerText = `${appState.matchScore}%`;
 
-        const overallPct = document.getElementById('report-overall-score-pct');
-        if (overallPct) overallPct.innerText = `${Math.round(data.technical_score * 10)}%`;
+        const techScore = Math.min(100, Math.max(0, Math.round(data.technical_score * 10)));
+        const violationsCount = (data.violations || []).length;
+        const integrityScore = Math.max(0, 100 - (violationsCount * 15));
 
-        const circleEl = document.getElementById('report-score-circle');
-        if (circleEl) {
-            const pct = Math.min(100, Math.max(0, data.technical_score * 10));
-            const circumference = 251.2;
-            const offset = circumference - (pct / 100) * circumference;
-            circleEl.style.strokeDashoffset = offset;
+        // Dynamic binding to modern semi-circular arc gauge
+        const calloutTech = document.getElementById('report-callout-tech-val');
+        if (calloutTech) calloutTech.innerText = `${techScore}%`;
+
+        const calloutInteg = document.getElementById('report-callout-integ-val');
+        if (calloutInteg) calloutInteg.innerText = `${integrityScore}%`;
+
+        const overallPct = document.getElementById('report-overall-score-pct');
+        if (overallPct) overallPct.innerText = `${techScore}%`;
+
+        const ratingBadge = document.getElementById('report-overall-rating-badge');
+        if (ratingBadge) {
+            if (techScore >= 80) {
+                ratingBadge.innerText = 'High Rating';
+                ratingBadge.className = 'text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-1';
+            } else if (techScore >= 60) {
+                ratingBadge.innerText = 'Moderate Rating';
+                ratingBadge.className = 'text-[9px] font-bold text-amber-600 uppercase tracking-widest mt-1';
+            } else {
+                ratingBadge.innerText = 'Low Rating';
+                ratingBadge.className = 'text-[9px] font-bold text-rose-600 uppercase tracking-widest mt-1';
+            }
+        }
+
+        // SVG Arc Proportional Splitting (pathLength = 100)
+        const arcTech = document.getElementById('report-arc-tech');
+        const arcInteg = document.getElementById('report-arc-integrity');
+        if (arcTech && arcInteg) {
+            // Split arc proportionally between tech and integrity
+            const techShare = Math.round((techScore / (techScore + integrityScore || 100)) * 100) || 68;
+            const integShare = 100 - techShare;
+            arcTech.setAttribute('stroke-dasharray', `${techShare} 100`);
+            arcInteg.setAttribute('stroke-dasharray', `${integShare} 100`);
+            arcInteg.setAttribute('stroke-dashoffset', `-${techShare}`);
         }
 
         const recEl = document.getElementById('report-rec-text') || document.getElementById('report-summary-text');
@@ -280,8 +332,8 @@ async function loadFinalReport() {
                 violations.forEach(v => {
                     const vCard = document.createElement('div');
                     vCard.className = "p-4 rounded-xl bg-slate-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
-                    
-                    const snapImg = v.snapshot_base64 
+
+                    const snapImg = v.snapshot_base64
                         ? `<img src="${v.snapshot_base64}" alt="Proof" class="w-28 h-20 object-cover rounded-lg border border-red-300 shadow">`
                         : `<div class="w-28 h-20 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-[10px] text-slate-400 font-mono">No Image</div>`;
 
@@ -304,6 +356,8 @@ async function loadFinalReport() {
     } catch (err) {
         console.error(err);
         if (qaContainer) qaContainer.innerHTML = `<div class="text-xs text-red-600">Failed to compile report: ${err.message}</div>`;
+    } finally {
+        isReportLoading = false;
     }
 }
 
@@ -322,3 +376,16 @@ async function submitRecruiterDecision(decision) {
         alert('Error: ' + e.message);
     }
 }
+
+// Global Hardware Teardown Hooks on Tab Close, Refresh, or Navigation
+window.addEventListener('beforeunload', () => {
+    if (typeof window.stopAllHardwareMedia === 'function') {
+        window.stopAllHardwareMedia();
+    }
+});
+
+window.addEventListener('pagehide', () => {
+    if (typeof window.stopAllHardwareMedia === 'function') {
+        window.stopAllHardwareMedia();
+    }
+});

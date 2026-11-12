@@ -51,7 +51,7 @@ def text_to_speech_base64(text: str, voice: str = DEFAULT_VOICE) -> Optional[str
 
         if raw_bytes:
             b64_audio = base64.b64encode(raw_bytes).decode("utf-8")
-            return f"data:audio/mp3;base64,{b64_audio}"
+            return f"data:audio/mpeg;base64,{b64_audio}"
         return None
     except Exception as e:
         print(f"Failed to generate base64 TTS: {e}")

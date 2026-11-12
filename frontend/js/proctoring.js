@@ -31,6 +31,9 @@ function openPermissionModal() {
 
 document.getElementById('btn-cancel-permission').addEventListener('click', () => {
     document.getElementById('permission-modal').classList.add('hidden');
+    if (typeof window.stopAllHardwareMedia === 'function') {
+        window.stopAllHardwareMedia();
+    }
 });
 
 document.getElementById('btn-grant-all-permissions').addEventListener('click', async () => {
@@ -89,10 +92,38 @@ document.getElementById('btn-grant-all-permissions').addEventListener('click', a
     }
 });
 
+// Global debug flags for 1-second live logger
+window._debugFaceDetected = false;
+window._debugPhoneDetected = false;
+
+// 1-Second Proctoring State Heartbeat Logger (Requested by User)
+setInterval(() => {
+    const isCocoLoaded = Boolean(cocoModel);
+    const isFaceLoaded = Boolean(faceLandmarker);
+    const isRunning = Boolean(isProctoringRunning);
+    const videoState = videoEl ? `readyState=${videoEl.readyState}` : 'videoEl=null';
+    const streamActive = cameraStream ? `streamActive=${cameraStream.active}` : 'no-stream';
+
+    console.log(
+        `[PROCTOR DEBUG 1s] ` +
+        `Proctoring Running: ${isRunning ? 'YES' : 'NO'} | ` +
+        `COCO Model Loaded: ${isCocoLoaded ? 'YES' : 'NO'} | ` +
+        `Face Model Loaded: ${isFaceLoaded ? 'YES' : 'NO'} | ` +
+        `Face Detected: ${window._debugFaceDetected ? 'YES' : 'NO'} | ` +
+        `Phone Detected: ${window._debugPhoneDetected ? 'YES' : 'NO'} | ` +
+        `(${videoState}, ${streamActive})`
+    );
+}, 1000);
+
 async function startEdgeProctoring() {
+    console.log("[PROCTOR DEBUG] startEdgeProctoring() called!");
     videoEl = document.getElementById('webcam-feed');
     canvasEl = document.getElementById('proctor-canvas');
-    if (!videoEl || !canvasEl) return;
+    console.log("[PROCTOR DEBUG] videoEl:", videoEl, "| canvasEl:", canvasEl);
+    if (!videoEl || !canvasEl) {
+        console.error("[PROCTOR DEBUG] ERROR: videoEl or canvasEl not found in DOM!");
+        return;
+    }
     canvasCtx = canvasEl.getContext('2d');
 
     strikeCount = 0;
@@ -100,40 +131,59 @@ async function startEdgeProctoring() {
 
     try {
         if (!cameraStream) {
+            console.log("[PROCTOR DEBUG] No cameraStream, requesting getUserMedia...");
             cameraStream = await navigator.mediaDevices.getUserMedia({
                 video: { width: 640, height: 480, facingMode: 'user' },
                 audio: false
             });
         }
+        console.log("[PROCTOR DEBUG] Setting videoEl.srcObject = cameraStream...");
         videoEl.srcObject = cameraStream;
-        await new Promise((res) => { videoEl.onloadedmetadata = () => res(); });
-        videoEl.play();
+
+        // Non-blocking metadata check: avoids hanging if metadata is already available
+        if (videoEl.readyState < 1) {
+            console.log("[PROCTOR DEBUG] Waiting for video onloadedmetadata...");
+            await new Promise((res) => {
+                videoEl.onloadedmetadata = () => res();
+                setTimeout(res, 800); // 800ms safety timeout
+            });
+        }
+        console.log("[PROCTOR DEBUG] Playing videoEl... readyState =", videoEl.readyState);
+        try { await videoEl.play(); } catch (e) { console.warn("[PROCTOR DEBUG] videoEl.play() notice:", e); }
 
         canvasEl.width = videoEl.videoWidth || 640;
         canvasEl.height = videoEl.videoHeight || 480;
 
         isProctoringRunning = true;
         logProctorEvent("[CAMERA] Webcam active. Initializing AI vision models...");
+        console.log("[PROCTOR DEBUG] isProctoringRunning set to TRUE.");
 
         // 2. Load TensorFlow.js COCO-SSD for Mobile Phone Detection
+        console.log("[PROCTOR DEBUG] Checking window.cocoSsd:", typeof window.cocoSsd);
         if (window.cocoSsd && !cocoModel) {
+            console.log("[PROCTOR DEBUG] Loading cocoSsd.load()...");
             cocoModel = await cocoSsd.load();
+            console.log("[PROCTOR DEBUG] COCO-SSD Model Loaded successfully!");
             logProctorEvent("[COCO-SSD] Mobile phone & object detector loaded.");
+        } else if (!window.cocoSsd) {
+            console.error("[PROCTOR DEBUG] ERROR: window.cocoSsd is UNDEFINED! Check script tag in index.html.");
         }
 
         // 3. Technical Safeguard #3: Load MediaPipe Face Landmarker with Blendshapes
         if (!faceLandmarker) {
+            console.log("[PROCTOR DEBUG] Initializing MediaPipe Face Landmarker...");
             await initMediaPipeFaceLandmarker();
         }
 
         // 4. Start Vision Loop
+        console.log("[PROCTOR DEBUG] Starting proctoringLoop via requestAnimationFrame...");
         animationFrameId = requestAnimationFrame(proctoringLoop);
 
         // 5. Technical Safeguard #1: Strict Visibility Change Listener (Document Hidden)
         setupVisibilityMonitoring();
 
     } catch (err) {
-        console.error("Proctoring initialization error:", err);
+        console.error("[PROCTOR DEBUG] Proctoring initialization error:", err);
         logProctorEvent(`[WARNING] Webcam or Edge AI setup notice: ${err.message}`);
     }
 }
@@ -146,57 +196,149 @@ function stopAllStreamsAndProctoring() {
         animationFrameId = null;
     }
 
-    // Stop and release camera tracks
+    // Stop and release camera tracks (Turns off camera green indicator immediately)
     if (cameraStream) {
-        cameraStream.getTracks().forEach(track => {
-            track.stop();
-        });
+        try {
+            cameraStream.getTracks().forEach(track => {
+                track.stop();
+                track.enabled = false;
+            });
+        } catch (e) { }
         cameraStream = null;
     }
 
-    // Stop and release screen share tracks
+    // Stop and release screen share tracks (Dismisses Chrome screen share banner immediately)
     if (screenStream) {
-        screenStream.getTracks().forEach(track => {
-            track.stop();
-        });
+        try {
+            screenStream.getTracks().forEach(track => {
+                track.onended = null;
+                track.stop();
+                track.enabled = false;
+            });
+        } catch (e) { }
         screenStream = null;
     }
 
     if (videoEl) {
-        videoEl.pause();
-        videoEl.srcObject = null;
+        try {
+            videoEl.pause();
+            if (videoEl.srcObject && typeof videoEl.srcObject.getTracks === 'function') {
+                videoEl.srcObject.getTracks().forEach(t => {
+                    t.stop();
+                    t.enabled = false;
+                });
+            }
+            videoEl.srcObject = null;
+        } catch (e) { }
     }
 
     if (canvasCtx && canvasEl) {
-        canvasCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+        try {
+            canvasCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+        } catch (e) { }
     }
 
     gazeAvertedStartTime = null;
-    logProctorEvent("[HARDWARE] Camera, microphone, and screen share automatically powered off.");
+    logProctorEvent("[HARDWARE] Camera and screen share feeds automatically powered off.");
 }
+window.stopProctoringStreams = stopAllStreamsAndProctoring;
+window.stopAllStreamsAndProctoring = stopAllStreamsAndProctoring;
+
+// Master Teardown: Shuts down camera, microphone, screen share, and all sounds immediately
+window.stopAllHardwareMedia = function () {
+    console.log("[HARDWARE TEARDOWN] Call terminated: Stopping camera, screen share, microphone, and sound.");
+    if (typeof appState !== 'undefined') {
+        appState.isInterviewActive = false;
+    }
+
+    // 1. Stop video camera and screen share
+    if (typeof window.stopProctoringStreams === 'function') {
+        window.stopProctoringStreams();
+    } else if (typeof stopAllStreamsAndProctoring === 'function') {
+        stopAllStreamsAndProctoring();
+    }
+
+    // 2. Stop microphone, VAD, and AI sound/speech
+    if (typeof window.stopInterviewAudioAndMic === 'function') {
+        window.stopInterviewAudioAndMic();
+    } else {
+        if (typeof stopActiveMicrophoneRecording === 'function') stopActiveMicrophoneRecording();
+        if (typeof stopAllAiSpeech === 'function') stopAllAiSpeech();
+        if (typeof stopSilenceCountdown === 'function') stopSilenceCountdown();
+    }
+
+    // 3. Global DOM Sweep: Scan DOM for any active video or audio media tracks and terminate them
+    try {
+        document.querySelectorAll('video, audio').forEach(el => {
+            if (el.srcObject && typeof el.srcObject.getTracks === 'function') {
+                el.srcObject.getTracks().forEach(track => {
+                    try {
+                        track.stop();
+                        track.enabled = false;
+                    } catch (e) { }
+                });
+                el.srcObject = null;
+            }
+            try {
+                el.pause();
+                el.removeAttribute('src');
+                el.load();
+            } catch (e) { }
+        });
+    } catch (err) {
+        console.warn("DOM media track sweep notice:", err);
+    }
+
+    // 4. Update UI labels
+    const aiStatusLabel = document.getElementById('ai-status-label');
+    if (aiStatusLabel) {
+        aiStatusLabel.innerText = "Call Ended (All Feeds Disconnected)";
+        aiStatusLabel.className = "text-xs font-mono-code font-bold uppercase tracking-widest text-slate-400";
+    }
+    const micLabel = document.getElementById('mic-instruction-label');
+    if (micLabel) {
+        micLabel.innerText = "Call ended";
+    }
+};
 
 async function initMediaPipeFaceLandmarker() {
     try {
-        // MediaPipe Tasks Vision loaded via CDN
+        console.log("[PROCTOR DEBUG] Initializing MediaPipe Face Landmarker...");
+        let visionPkg = null;
         if (window.mediapipe && window.mediapipe.tasks && window.mediapipe.tasks.vision) {
-            const { FaceLandmarker, FilesetResolver } = window.mediapipe.tasks.vision;
+            visionPkg = window.mediapipe.tasks.vision;
+        } else {
+            // Dynamic import fallback from CDN ES Module
+            try {
+                visionPkg = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3");
+            } catch (impErr) {
+                console.warn("[PROCTOR DEBUG] Dynamic import of MediaPipe failed:", impErr);
+            }
+        }
+
+        if (visionPkg) {
+            const { FaceLandmarker, FilesetResolver } = visionPkg;
+            console.log("[PROCTOR DEBUG] Loading MediaPipe FilesetResolver wasm from CDN...");
             const filesetResolver = await FilesetResolver.forVisionTasks(
                 "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
             );
+            console.log("[PROCTOR DEBUG] Creating FaceLandmarker from options...");
             faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
                 baseOptions: {
                     modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
                     delegate: "GPU"
                 },
-                // Safeguard #3: Enable blendshapes for true eye gaze tracking
                 outputFaceBlendshapes: true,
                 runningMode: "VIDEO",
                 numFaces: 2
             });
+            console.log("[PROCTOR DEBUG] FaceLandmarker initialized successfully!");
             logProctorEvent("[MEDIAPIPE] FaceLandmarker initialized with true eye blendshapes.");
+        } else {
+            console.warn("[PROCTOR DEBUG] MediaPipe vision library could not be loaded. Falling back to COCO-SSD person detection.");
         }
     } catch (e) {
-        console.warn("MediaPipe GPU delegate fallback to CPU:", e);
+        console.error("[PROCTOR DEBUG] MediaPipe setup exception:", e);
     }
 }
 
@@ -210,60 +352,72 @@ async function proctoringLoop(timestamp) {
         canvasCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
         // A. Run COCO-SSD Object Detection
+        let detectedPersonCount = 0;
         if (cocoModel && videoEl.readyState >= 2) {
             try {
                 const predictions = await cocoModel.detect(videoEl);
                 let phoneFound = false;
-                let personCount = 0;
 
                 for (let pred of predictions) {
-                    // Draw bounding box
-                    if (pred.score > 0.55) {
-                        canvasCtx.strokeStyle = pred.class === 'cell phone' ? '#ef4444' : '#6366f1';
-                        canvasCtx.lineWidth = 2;
+                    // Draw bounding box if confidence >= 0.45
+                    if (pred.score >= 0.45) {
+                        const isPhone = pred.class === 'cell phone';
+                        canvasCtx.strokeStyle = isPhone ? '#ef4444' : '#6366f1';
+                        canvasCtx.lineWidth = 3;
                         canvasCtx.strokeRect(...pred.bbox);
 
-                        canvasCtx.fillStyle = pred.class === 'cell phone' ? '#ef4444' : '#6366f1';
-                        canvasCtx.font = "12px sans-serif";
-                        canvasCtx.fillText(`${pred.class} (${Math.round(pred.score * 100)}%)`, pred.bbox[0], pred.bbox[1] > 15 ? pred.bbox[1] - 4 : 12);
+                        canvasCtx.fillStyle = isPhone ? '#ef4444' : '#6366f1';
+                        canvasCtx.font = "bold 13px sans-serif";
+                        canvasCtx.fillText(`${pred.class.toUpperCase()} (${Math.round(pred.score * 100)}%)`, pred.bbox[0], pred.bbox[1] > 18 ? pred.bbox[1] - 5 : 15);
                     }
 
-                    if (pred.class === 'cell phone' && pred.score > 0.60) {
+                    // Mobile phone detection threshold: 0.45 (lowered from 0.60 to capture angled/dark phones)
+                    if (pred.class === 'cell phone' && pred.score >= 0.45) {
                         phoneFound = true;
                     }
-                    if (pred.class === 'person') {
-                        personCount++;
+                    if (pred.class === 'person' && pred.score >= 0.50) {
+                        detectedPersonCount++;
+                    }
+                }
+                window._debugPhoneDetected = phoneFound;
+
+                // Update HUD element with correct ID: 'hud-phone-status'
+                const phoneHud = document.getElementById('hud-phone-status') || document.getElementById('hud-object-status');
+                if (phoneFound) {
+                    if (phoneHud) {
+                        phoneHud.innerText = "⚠ CELL PHONE DETECTED";
+                        phoneHud.className = "text-rose-400 font-bold font-mono animate-pulse";
+                    }
+                    triggerProctorViolation("Mobile phone detected in camera frame", 0.85);
+                } else {
+                    if (phoneHud) {
+                        phoneHud.innerText = "✓ Not Detected";
+                        phoneHud.className = "text-emerald-400 font-bold font-mono";
                     }
                 }
 
-                const objHud = document.getElementById('hud-object-status');
-                if (phoneFound) {
-                    objHud.innerText = "CELL PHONE DETECTED!";
-                    objHud.className = "text-red-400 font-bold";
-                    triggerProctorViolation("Mobile phone detected in camera frame", 0.85);
-                } else if (personCount > 1) {
-                    objHud.innerText = "MULTIPLE PERSONS DETECTED!";
-                    objHud.className = "text-red-400 font-bold";
+                if (detectedPersonCount > 1) {
                     triggerProctorViolation("Multiple persons detected in camera frame", 0.80);
-                } else {
-                    objHud.innerText = "No Mobile Phone Detected";
-                    objHud.className = "text-slate-300";
                 }
             } catch (err) {
                 // Ignore transient frame errors
             }
         }
 
-        // B. Run MediaPipe Face Landmarker & Gaze Blendshapes
+        // B. Run MediaPipe Face Landmarker & Gaze Blendshapes (with COCO-SSD fallback)
         if (faceLandmarker && videoEl.readyState >= 2) {
             try {
                 const results = faceLandmarker.detectForVideo(videoEl, performance.now());
+                const hasFace = Boolean(results.faceLandmarks && results.faceLandmarks.length > 0);
+                window._debugFaceDetected = hasFace;
                 const gazeHud = document.getElementById('hud-gaze-status');
 
-                if (!results.faceLandmarks || results.faceLandmarks.length === 0) {
+                if (!hasFace) {
                     // Candidate left webcam frame
-                    gazeHud.innerText = "No Face in Frame";
-                    gazeHud.className = "text-red-400";
+                    if (gazeHud) {
+                        gazeHud.innerText = "⚠ No Face in Frame";
+                        gazeHud.className = "text-rose-400 font-bold font-mono animate-pulse";
+                    }
                     checkGazeAvertedDuration("Candidate face not visible in camera frame");
                 } else {
                     // Check blendshapes for eye deviation
@@ -274,23 +428,45 @@ async function proctoringLoop(timestamp) {
                         const lookRight = shapes.find(s => s.categoryName === 'eyeLookInLeft' || s.categoryName === 'eyeLookOutRight')?.score || 0;
                         const lookUp = shapes.find(s => s.categoryName === 'eyeLookUpLeft' || s.categoryName === 'eyeLookUpRight')?.score || 0;
 
-                        if (lookLeft > 0.65 || lookRight > 0.65 || lookUp > 0.70) {
+                        if (lookLeft > 0.55 || lookRight > 0.55 || lookUp > 0.60) {
                             eyeAverted = true;
                         }
                     }
 
                     if (eyeAverted) {
-                        gazeHud.innerText = "Eye Gaze Averted (>30°)";
-                        gazeHud.className = "text-amber-400 font-semibold";
+                        if (gazeHud) {
+                            gazeHud.innerText = "⚠ Eye Gaze Averted";
+                            gazeHud.className = "text-amber-400 font-bold font-mono";
+                        }
                         checkGazeAvertedDuration("Candidate eyes diverted away from screen");
                     } else {
-                        gazeHud.innerText = "Face & Gaze Aligned";
-                        gazeHud.className = "text-emerald-400";
+                        if (gazeHud) {
+                            gazeHud.innerText = "✓ Normal";
+                            gazeHud.className = "text-emerald-400 font-bold font-mono";
+                        }
                         gazeAvertedStartTime = null; // Reset averted timer
                     }
                 }
             } catch (e) {
                 // Frame skip
+            }
+        } else if (cocoModel && videoEl.readyState >= 2) {
+            // Robust Fallback: If MediaPipe is loading, use COCO-SSD person detection
+            const gazeHud = document.getElementById('hud-gaze-status');
+            if (detectedPersonCount === 0) {
+                window._debugFaceDetected = false;
+                if (gazeHud) {
+                    gazeHud.innerText = "⚠ No Person in Frame";
+                    gazeHud.className = "text-rose-400 font-bold font-mono animate-pulse";
+                }
+                checkGazeAvertedDuration("Candidate face/body not visible in camera frame");
+            } else {
+                window._debugFaceDetected = true;
+                if (gazeHud) {
+                    gazeHud.innerText = "✓ Normal";
+                    gazeHud.className = "text-emerald-400 font-bold font-mono";
+                }
+                gazeAvertedStartTime = null;
             }
         }
     }
@@ -362,6 +538,16 @@ async function triggerProctorViolation(reason, confidence = 1.0) {
     // Show Apple-style 3-Strike Warning Toast Modal with Snapshot
     showStrikeModal(strikeCount, reason, snapshotBase64);
 
+    // Speak real-time Voice Warning aloud via Edge-TTS
+    if (typeof speakWarning === 'function') {
+        const lowerReason = (reason || '').toLowerCase();
+        if (lowerReason.includes('phone') || lowerReason.includes('device') || lowerReason.includes('cell')) {
+            speakWarning('phone');
+        } else {
+            speakWarning('face');
+        }
+    }
+
     // Transmit violation and snapshot to SQLite backend
     try {
         await fetch('/api/proctoring/violation', {
@@ -378,6 +564,18 @@ async function triggerProctorViolation(reason, confidence = 1.0) {
         });
     } catch (err) {
         console.error("Failed to log violation to server:", err);
+    }
+
+    // Critical Strike Termination (3/3 strikes reached)
+    if (strikeCount >= maxStrikes) {
+        logProctorEvent(`[CRITICAL] Maximum strikes reached (${strikeCount}/${maxStrikes}). Disqualifying candidate.`);
+        if (typeof window.stopAllHardwareMedia === 'function') {
+            window.stopAllHardwareMedia();
+        }
+        setTimeout(() => {
+            alert(`Interview Terminated: Maximum violation strikes (3/3) reached.\nReason: ${reason}\n\nCamera, audio, and screen sharing have been disconnected.`);
+            loadFinalReport();
+        }, 800);
     }
 }
 

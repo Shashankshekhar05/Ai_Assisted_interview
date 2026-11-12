@@ -559,85 +559,99 @@
                     <button class="pb-2 hover:text-slate-800">Proctoring Logs</button>
                 </div>
 
-                <!-- Overall Score & Evaluation Breakdown Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+                <!-- Overall Score & AI Recommendation Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
                     
-                    <!-- Overall Score Circular Gauge (4 Cols) -->
-                    <div class="md:col-span-4 glass-panel-light p-6 rounded-2xl flex flex-col items-center justify-center text-center space-y-3 border border-slate-200">
-                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Overall Score</h4>
-                        
-                        <div class="relative w-32 h-32 flex items-center justify-center">
-                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="40" stroke="#E2E8F0" stroke-width="8" fill="transparent"/>
-                                <circle id="report-score-circle" cx="50" cy="50" r="40" stroke="#10B981" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="35" stroke-linecap="round" fill="transparent"/>
+                    <!-- Modern Semi-Circular Arc Performance Gauge (5 Cols) -->
+                    <div class="lg:col-span-5 glass-panel-light p-5 rounded-2xl flex flex-col justify-between border border-slate-200 shadow-sm relative overflow-hidden bg-white">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 mb-2">
+                            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-chart-pie text-violet-600"></i> Overall Technical Score
+                            </h4>
+                            <span class="text-[10px] font-mono text-slate-400 font-semibold uppercase tracking-wider">Audit Rating</span>
+                        </div>
+
+                        <!-- Semi-Circular Arc Gauge Container -->
+                        <div class="relative w-full aspect-[2.1/1] max-w-[390px] mx-auto my-auto flex items-center justify-center">
+                            <!-- SVG Arc & Callouts (Matched to Reference Image) -->
+                            <svg class="w-full h-full overflow-visible" viewBox="0 0 420 200">
+                                <!-- Background Semi-Circle Track -->
+                                <path d="M 115, 185 A 95, 95 0 0, 1 305, 185" fill="none" stroke="#F1F5F9" stroke-width="40" stroke-linecap="butt" />
+
+                                <!-- Cyan Segment (Technical Score) -->
+                                <path id="report-arc-tech" d="M 115, 185 A 95, 95 0 0, 1 305, 185" fill="none" stroke="#00C5FF" stroke-width="40" stroke-linecap="butt" pathLength="100" stroke-dasharray="68 100" />
+
+                                <!-- Amber / Orange Segment (Integrity / Fit Score) -->
+                                <path id="report-arc-integrity" d="M 115, 185 A 95, 95 0 0, 1 305, 185" fill="none" stroke="#F59E0B" stroke-width="40" stroke-linecap="butt" pathLength="100" stroke-dasharray="32 100" stroke-dashoffset="-68" />
+
+                                <!-- Cyan Target Ring on Arc -->
+                                <circle cx="143" cy="118" r="11" fill="#00C5FF" fill-opacity="0.25" />
+                                <circle cx="143" cy="118" r="5.5" fill="#E0F7FF" />
+                                <circle cx="143" cy="118" r="3" fill="#00C5FF" />
+
+                                <!-- Cyan Callout Line to Left -->
+                                <path d="M 143, 118 L 143, 68 Q 143, 58 133, 58 L 88, 58" fill="none" stroke="#38BDF8" stroke-width="1.5" stroke-linecap="round" />
+
+                                <!-- Amber Target Ring on Arc -->
+                                <circle cx="277" cy="118" r="11" fill="#F59E0B" fill-opacity="0.25" />
+                                <circle cx="277" cy="118" r="5.5" fill="#FEF3C7" />
+                                <circle cx="277" cy="118" r="3" fill="#F59E0B" />
+
+                                <!-- Amber Callout Line to Right -->
+                                <path d="M 277, 118 L 305, 118 Q 315, 118 318, 126 L 322, 134 Q 325, 140 335, 140 L 340, 140" fill="none" stroke="#FBBF24" stroke-width="1.5" stroke-linecap="round" />
                             </svg>
-                            <div class="absolute flex flex-col items-center justify-center text-center">
-                                <span id="report-overall-score-pct" class="text-2xl font-black text-slate-900 font-mono">86%</span>
-                                <span class="text-[9px] font-bold text-emerald-600 uppercase tracking-wider">(Excellent)</span>
+
+                            <!-- Left Callout Label: Tech Score -->
+                            <div class="absolute left-0 top-[14%] flex items-center gap-1.5 z-10 pointer-events-none">
+                                <span id="report-callout-tech-val" class="text-sm sm:text-base font-black text-slate-800 font-mono">88%</span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#00C5FF] text-white text-[9px] font-bold shadow-sm">
+                                    <i class="fa-solid fa-code text-[8px]"></i> Tech
+                                </span>
+                            </div>
+
+                            <!-- Right Callout Label: Integrity Score -->
+                            <div class="absolute right-0 top-[56%] flex items-center gap-1.5 z-10 pointer-events-none">
+                                <span id="report-callout-integ-val" class="text-sm sm:text-base font-black text-slate-800 font-mono">100%</span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F59E0B] text-white text-[9px] font-bold shadow-sm">
+                                    <i class="fa-solid fa-shield-halved text-[8px]"></i> Integrity
+                                </span>
+                            </div>
+
+                            <!-- Center Display (Inside Arc Hollow) -->
+                            <div class="absolute bottom-1.5 flex flex-col items-center justify-center text-center pointer-events-none">
+                                <!-- Top Pill Bar (from Reference Design) -->
+                                <div class="w-8 h-1 rounded-full bg-slate-300 mb-1"></div>
+                                <span id="report-overall-score-pct" class="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight leading-none">--%</span>
+                                <span id="report-overall-rating-badge" class="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-1">High Rating</span>
                             </div>
                         </div>
 
-                        <p class="text-[11px] text-slate-500">Composite score based on technical depth, role alignment, and communication.</p>
-                    </div>
-
-                    <!-- Evaluation Breakdown Bars (8 Cols) -->
-                    <div class="md:col-span-8 glass-panel-light p-6 rounded-2xl space-y-3.5 border border-slate-200">
-                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Evaluation Breakdown</h4>
-                        
-                        <div class="space-y-3 text-xs">
-                            <div>
-                                <div class="flex justify-between font-semibold text-slate-800 mb-1">
-                                    <span><i class="fa-solid fa-code text-violet-600 mr-1.5"></i>Technical Skills</span>
-                                    <span id="rep-tech-score" class="font-mono text-emerald-600 font-bold">88%</span>
-                                </div>
-                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 88%"></div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="flex justify-between font-semibold text-slate-800 mb-1">
-                                    <span><i class="fa-solid fa-puzzle-piece text-violet-600 mr-1.5"></i>Problem Solving</span>
-                                    <span id="rep-problem-score" class="font-mono text-emerald-600 font-bold">85%</span>
-                                </div>
-                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 85%"></div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="flex justify-between font-semibold text-slate-800 mb-1">
-                                    <span><i class="fa-solid fa-comments text-violet-600 mr-1.5"></i>Communication</span>
-                                    <span id="rep-comm-score" class="font-mono text-emerald-600 font-bold">84%</span>
-                                </div>
-                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 84%"></div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="flex justify-between font-semibold text-slate-800 mb-1">
-                                    <span><i class="fa-solid fa-user-check text-violet-600 mr-1.5"></i>Role Fit</span>
-                                    <span id="rep-fit-score" class="font-mono text-emerald-600 font-bold">87%</span>
-                                </div>
-                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-emerald-500 h-full rounded-full" style="width: 87%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- AI Recommendation Card (Light Violet Banner) -->
-                <div class="p-5 rounded-2xl bg-violet-50 border border-violet-200 flex items-start space-x-3.5">
-                    <div class="w-8 h-8 rounded-lg bg-violet-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow">
-                        <i class="fa-solid fa-sparkles text-xs"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-violet-900 uppercase tracking-wider">AI Recommendation</h4>
-                        <p id="report-rec-text" class="text-xs text-violet-950 mt-1 leading-relaxed font-medium">
-                            Strong match for the role. Good technical depth, clear communication, and relevant project experience. Candidate demonstrated solid problem-solving methodologies and architectural clarity.
+                        <!-- Footer Caption -->
+                        <p class="text-[11px] text-slate-500 text-center mt-2.5">
+                            Composite evaluation of technical problem-solving and proctoring integrity.
                         </p>
+                    </div>
+
+                    <!-- AI Recommendation Card (7 Cols) -->
+                    <div class="lg:col-span-7 p-6 rounded-2xl bg-gradient-to-br from-violet-50/90 to-indigo-50/40 border border-violet-200 flex flex-col justify-between shadow-sm">
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3.5">
+                                <div class="w-9 h-9 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-violet-500/20">
+                                    <i class="fa-solid fa-sparkles text-sm"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-violet-900 uppercase tracking-wider">AI Executive Recommendation</h4>
+                                    <span class="text-[10px] text-violet-600 font-medium">Recruiter Decision Guidance</span>
+                                </div>
+                            </div>
+                            <p id="report-rec-text" class="text-xs text-violet-950 leading-relaxed font-medium bg-white/70 p-4 rounded-xl border border-violet-100">
+                                Strong match for the role. Good technical depth, clear communication, and relevant project experience. Candidate demonstrated solid problem-solving methodologies and architectural clarity.
+                            </p>
+                        </div>
+                        <div class="pt-3 border-t border-violet-100 flex items-center justify-between text-[11px] text-slate-500">
+                            <span>Status: Verified Audit Dossier</span>
+                            <span class="font-mono font-bold text-violet-700">Zero Critical Violations</span>
+                        </div>
                     </div>
                 </div>
 

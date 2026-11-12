@@ -2,19 +2,32 @@ import json
 from typing import Dict, Any, List
 from groq import Groq
 from backend.config import settings
-from backend.database import get_session_details, get_session_transcripts, get_session_violations, save_report
+from backend.database import get_session_details, get_session_transcripts, get_session_violations, save_report, get_report
 
 def generate_human_audit_report(session_id: str) -> Dict[str, Any]:
     """
     Generates a structured Human Reviewer Interview Audit Report
     combining Q&A transcript analysis with the 3-strike proctoring log.
+    Technical Safeguard: DB-cached to prevent repeated LLM calls and rate limiting.
     """
     session = get_session_details(session_id)
     if not session:
         raise ValueError(f"Session '{session_id}' not found.")
 
-    transcripts = get_session_transcripts(session_id)
     violations = get_session_violations(session_id)
+
+    # 1. DB Cache Check: If report was already generated, return cached copy instantly (0.001s)
+    cached = get_report(session_id)
+    if cached and cached.get("report_json"):
+        try:
+            cached_report = json.loads(cached["report_json"])
+            cached_report["violations"] = violations
+            cached_report["session"] = session
+            return cached_report
+        except Exception as e:
+            print(f"Warning: Could not parse cached report JSON: {e}")
+
+    transcripts = get_session_transcripts(session_id)
 
     # Compute base integrity score
     # Deduct 25 points per strike, capped at minimum 0
@@ -28,10 +41,12 @@ def generate_human_audit_report(session_id: str) -> Dict[str, Any]:
             summary=report_data["summary"],
             recommendation=report_data["recommendation"],
             technical_score=report_data["technical_score"],
-            integrity_score=integrity_score
+            integrity_score=integrity_score,
+            report_json=json.dumps(report_data)
         )
         report_data["integrity_score"] = integrity_score
         report_data["violations"] = violations
+        report_data["session"] = session
         return report_data
 
     client = Groq(api_key=settings.GROQ_API_KEY, base_url=settings.GROQ_BASE_URL)
@@ -99,31 +114,35 @@ Provide a strict, professional assessment in valid JSON with this exact schema:
         report_data = json.loads(content)
         tech_score = float(report_data.get("technical_score", 7.0))
         
+        report_data["integrity_score"] = integrity_score
+        report_data["session"] = session
+        report_data["violations"] = violations
+
         save_report(
             session_id=session_id,
             summary=report_data["summary"],
             recommendation=report_data["recommendation"],
             technical_score=tech_score,
-            integrity_score=integrity_score
+            integrity_score=integrity_score,
+            report_json=json.dumps(report_data)
         )
-        
-        report_data["integrity_score"] = integrity_score
-        report_data["session"] = session
-        report_data["violations"] = violations
         return report_data
 
     except Exception as e:
         print(f"Groq report generation error: {e}")
         report_data = _generate_heuristic_report(session, transcripts, violations, integrity_score)
+        report_data["integrity_score"] = integrity_score
+        report_data["violations"] = violations
+        report_data["session"] = session
+
         save_report(
             session_id=session_id,
             summary=report_data["summary"],
             recommendation=report_data["recommendation"],
             technical_score=report_data["technical_score"],
-            integrity_score=integrity_score
+            integrity_score=integrity_score,
+            report_json=json.dumps(report_data)
         )
-        report_data["integrity_score"] = integrity_score
-        report_data["violations"] = violations
         return report_data
 
 def _generate_heuristic_report(session: Dict[str, Any], transcripts: List[Dict[str, Any]], violations: List[Dict[str, Any]], integrity_score: float) -> Dict[str, Any]:

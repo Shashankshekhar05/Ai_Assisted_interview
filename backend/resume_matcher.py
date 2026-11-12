@@ -4,11 +4,135 @@ from typing import Dict, Any
 from groq import Groq
 from backend.config import settings
 
+import json
+import re
+import fitz  # PyMuPDF
+from typing import Dict, Any, List, Tuple
+from groq import Groq
+from backend.config import settings
+
+# Comprehensive Technical Skills Taxonomy
+KNOWN_TECH_SKILLS = [
+    # Languages
+    "python", "javascript", "typescript", "java", "c++", "c#", "golang", "go", "rust", "php", "ruby", "sql", "html", "css",
+    # Frameworks & Libraries
+    "fastapi", "django", "flask", "react", "next.js", "vue", "angular", "node.js", "nodejs", "express", "spring boot", "tailwind",
+    # AI / LLM / Data
+    "machine learning", "deep learning", "nlp", "llm", "ai/llm", "generative ai", "langchain", "pytorch", "tensorflow", "openai", "groq", "pandas", "numpy",
+    # Databases
+    "postgresql", "postgres", "mysql", "mongodb", "sqlite", "redis", "elasticsearch", "database design", "sql database", "nosql",
+    # DevOps, Cloud & Architecture
+    "docker", "kubernetes", "aws", "azure", "gcp", "ci/cd", "git", "github", "linux", "cloud deployments", "cloud deployment",
+    # Concepts
+    "rest api", "rest apis", "restful", "graphql", "microservices", "asyncio", "asynchronous programming", "system design", "automated testing", "unit testing", "data structures"
+]
+
+def extract_must_have_skills_from_jd(jd_text: str) -> List[str]:
+    """
+    Extracts must-have technical skills from the Job Description text.
+    Uses exact keyword taxonomy plus comma/bullet pattern matching.
+    """
+    jd_lower = jd_text.lower()
+    extracted = []
+    
+    # 1. Match against known tech taxonomy
+    for skill in KNOWN_TECH_SKILLS:
+        if re.search(r'\b' + re.escape(skill) + r'\b', jd_lower):
+            clean_name = skill.title()
+            if skill in ["sql", "aws", "gcp", "ci/cd", "nlp", "llm", "ai/llm", "api", "apis", "rest api", "rest apis"]:
+                clean_name = skill.upper()
+            elif skill == "fastapi":
+                clean_name = "FastAPI"
+            elif skill in ["node.js", "nodejs"]:
+                clean_name = "Node.js"
+            elif skill == "next.js":
+                clean_name = "Next.js"
+            extracted.append(clean_name)
+    
+    # Deduplicate while preserving order and removing redundant sub-phrases
+    seen = set()
+    raw_unique = []
+    for s in extracted:
+        lower_s = s.lower()
+        if lower_s not in seen:
+            seen.add(lower_s)
+            raw_unique.append(s)
+            
+    # Filter out overlapping phrases (e.g., if 'SQL' is present, don't double count 'Sql Database')
+    unique_skills = []
+    all_lowers = [s.lower() for s in raw_unique]
+    for s in raw_unique:
+        s_low = s.lower()
+        has_shorter_parent = any(other != s_low and other in s_low and len(other) >= 3 for other in all_lowers)
+        if not has_shorter_parent:
+            unique_skills.append(s)
+            
+    # Fallback if no known skills found
+    if not unique_skills:
+        words = re.findall(r'\b[A-Za-z0-9+#.]{3,}\b', jd_text)
+        stopwords = {"with", "from", "that", "this", "have", "must", "plus", "will", "role", "team", "work", "looking", "candidate"}
+        unique_skills = [w.capitalize() for w in words if w.lower() not in stopwords][:6]
+
+    return unique_skills
+
+def match_skills_in_resume(must_have_skills: List[str], resume_text: str) -> Tuple[List[str], List[str]]:
+    """
+    Performs exact keyword matching of must-have skills in candidate resume text.
+    Returns (matched_skills, missing_skills).
+    """
+    resume_lower = resume_text.lower()
+    matched = []
+    missing = []
+
+    for skill in must_have_skills:
+        skill_lower = skill.lower()
+        # Aliases & variants
+        if skill_lower == "ai/llm":
+            found = bool(re.search(r'\b(ai|llm|generative ai|artificial intelligence)\b', resume_lower))
+        elif skill_lower in ["rest api", "rest apis"]:
+            found = bool(re.search(r'\b(rest|restful|api|apis)\b', resume_lower))
+        elif skill_lower in ["database design", "sql database"]:
+            found = bool(re.search(r'\b(sql|database|db|postgres|mysql|sqlite|mongodb)\b', resume_lower))
+        elif skill_lower in ["asynchronous programming", "asyncio"]:
+            found = bool(re.search(r'\b(async|asyncio|asynchronous|concurrency)\b', resume_lower))
+        elif skill_lower in ["automated testing", "unit testing"]:
+            found = bool(re.search(r'\b(testing|pytest|unittest|test cases|automation)\b', resume_lower))
+        elif skill_lower in ["cloud deployments", "cloud deployment"]:
+            found = bool(re.search(r'\b(cloud|deployment|deploy|aws|gcp|azure|docker)\b', resume_lower))
+        else:
+            pattern = r'\b' + re.escape(skill_lower) + r'\b'
+            found = bool(re.search(pattern, resume_lower))
+
+        if found:
+            matched.append(skill)
+        else:
+            missing.append(skill)
+
+    return matched, missing
+
+def calculate_hard_skill_score(matched_skills: List[str], must_have_skills: List[str]) -> Tuple[int, int]:
+    """
+    Deterministic scoring:
+    Formula: raw_ratio = (matched_must_have_skills / total_must_have_skills) * 70
+    Penalty: Per-skill penalty: deduct 5 points per missing skill (penalty = len(missing_skills) * 5).
+    """
+    total = max(len(must_have_skills), 1)
+    matched_count = len(matched_skills)
+    missing_count = total - matched_count
+    
+    # 70-point max allocation for hard skills
+    base_score = (matched_count / total) * 70.0
+    
+    # Per-skill penalty: deduct 5 points per missing skill
+    penalty = missing_count * 5.0
+    adjusted_score = max(0.0, base_score - penalty)
+        
+    return round(adjusted_score), round((matched_count / total) * 100)
+
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
     """Extract raw text from PDF bytes using PyMuPDF (fitz) in memory."""
     text_content = []
     try:
-        # Open PDF from in-memory stream
         with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
             for page in doc:
                 text = page.get_text()
@@ -20,18 +144,42 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
 
 def evaluate_resume_against_jd(jd_text: str, resume_text: str, threshold: int = 70) -> Dict[str, Any]:
     """
-    Compare Candidate Resume against Job Description using Groq Llama 3.3.
-    Extracts experience level (Fresher vs Experienced), skills match, and initial questions.
+    Hybrid Deterministic + LLM Evaluation:
+    1. Extract must-have skills from JD.
+    2. Perform exact keyword matching in resume.
+    3. Calculate hard skill score (0-70 max) with 20-point missing-skill deduction.
+    4. Call Groq ONLY for qualitative depth & communication score (0-30 max).
+    5. Final Score = Hard Skill Score + LLM Depth Score.
     """
-    # Fallback response if Groq API key is not yet configured by the user
+    must_have_skills = extract_must_have_skills_from_jd(jd_text)
+    matched_skills, missing_skills = match_skills_in_resume(must_have_skills, resume_text)
+    hard_skill_score, raw_match_pct = calculate_hard_skill_score(matched_skills, must_have_skills)
+
+    # Fallback if Groq API key is not configured
     if not settings.has_groq_key:
-        return _mock_evaluation_fallback(jd_text, resume_text, threshold)
+        return _mock_evaluation_fallback(jd_text, resume_text, threshold, must_have_skills, matched_skills, missing_skills, hard_skill_score)
 
     client = Groq(api_key=settings.GROQ_API_KEY, base_url=settings.GROQ_BASE_URL)
 
     prompt = f"""
 You are an expert Technical Recruiter and Engineering Hiring Manager.
-Evaluate the candidate's resume against the provided Job Description (JD).
+The candidate's hard skills have already been evaluated deterministically via keyword matching:
+- Total Must-Have Skills Required: {len(must_have_skills)} ({', '.join(must_have_skills)})
+- Matched Skills in Resume: {len(matched_skills)} ({', '.join(matched_skills) if matched_skills else 'None'})
+- Missing Critical Skills: {len(missing_skills)} ({', '.join(missing_skills) if missing_skills else 'None'})
+- Deterministic Hard Skill Score: {hard_skill_score}/70
+
+YOUR TASK:
+Do NOT calculate the total score. Evaluate ONLY the candidate's communication quality, project depth, and technical clarity based strictly on their resume text.
+Award a fair, balanced "llm_depth_score" between 0 and 30:
+- 0 to 5: Completely empty, gibberish, or 1-sentence placeholder with zero technical context.
+- 6 to 10: Basic junior/student projects, calculator/todo apps, or simple scripting.
+- 11 to 15: Solid practical projects (1-2 working web/API/DB projects, clear business logic and endpoints).
+- 16 to 22: Strong full-stack/backend implementation, comprehensive database schemas, and microservice integration.
+- 23 to 30: Senior/Lead production impact, high-throughput architectures, quantitative benchmarks, and cloud orchestration.
+
+CRITICAL GUIDELINE:
+Award a fair score matching their project maturity. For candidates with 1-2 practical working projects, award between 10 and 14 points. For senior candidates with high-impact systems, award 18 to 25 points.
 
 JOB DESCRIPTION:
 {jd_text}
@@ -39,17 +187,16 @@ JOB DESCRIPTION:
 CANDIDATE RESUME:
 {resume_text}
 
-Return ONLY a valid JSON object matching this exact schema:
+Return ONLY a valid JSON object with this exact schema:
 {{
   "candidate_name": "string (name extracted from resume or 'Candidate')",
-  "match_percentage": integer (0 to 100 based on core qualifications and required skills),
-  "experience_level": "Fresher" (if less than 1.5 years experience, student, or recent graduate) OR "Experienced" (if 2+ years professional experience),
+  "llm_depth_score": integer (0 to 30),
+  "depth_reasoning": "1-2 sentences justifying the 0-30 depth score",
+  "experience_level": "Fresher" (if student, intern, or <2 yrs) OR "Experienced" (if 2+ yrs full-time),
   "years_of_experience": float or integer,
-  "key_strengths": ["list", "of", "strong", "skills", "from", "resume", "matching", "JD"],
-  "missing_skills": ["list", "of", "critical", "skills", "in", "JD", "missing", "from", "resume"],
-  "evaluation_summary": "2-3 sentences explaining the candidate fit and experience classification",
+  "evaluation_summary": "2-3 sentences summarizing technical fit and hard skills vs depth alignment",
   "recommended_questions": [
-     "5 tailored technical interview questions based strictly on their experience level, past projects listed, and JD requirements."
+     "5 tailored technical interview questions targeting their resume projects and missing skills."
   ]
 }}
 """
@@ -69,48 +216,76 @@ Return ONLY a valid JSON object matching this exact schema:
         content = completion.choices[0].message.content
         result = json.loads(content)
         
-        # Ensure standard keys are present
-        match_score = int(result.get("match_percentage", 0))
-        result["match_percentage"] = match_score
-        result["start_interview"] = match_score >= threshold
+        # Extract depth score (0-30)
+        llm_depth = int(result.get("llm_depth_score", 15))
+        llm_depth = max(0, min(30, llm_depth))
         
-        # Ensure experience_level conforms strictly to Fresher vs Experienced
+        # Calculate Final Composite Score
+        final_score = min(100, max(0, hard_skill_score + llm_depth))
+        
+        result["match_percentage"] = final_score
+        result["hard_skill_score"] = hard_skill_score
+        result["llm_depth_score"] = llm_depth
+        result["key_strengths"] = matched_skills if matched_skills else ["Problem Solving"]
+        result["missing_skills"] = missing_skills
+        result["start_interview"] = final_score >= threshold
+        
         exp = result.get("experience_level", "Fresher")
         result["experience_level"] = "Experienced" if "exp" in exp.lower() else "Fresher"
         
         return result
 
     except Exception as e:
-        # Graceful fallback or raise with clear message
-        print(f"Groq API call failed: {e}. Falling back to rule-based evaluation.")
-        return _mock_evaluation_fallback(jd_text, resume_text, threshold)
+        print(f"Groq API call failed: {e}. Falling back to deterministic scoring.")
+        return _mock_evaluation_fallback(jd_text, resume_text, threshold, must_have_skills, matched_skills, missing_skills, hard_skill_score)
 
-def _mock_evaluation_fallback(jd_text: str, resume_text: str, threshold: int) -> Dict[str, Any]:
-    """Heuristic fallback when offline or before API key is provided."""
-    jd_words = set(w.lower().strip(".,;:()") for w in jd_text.split() if len(w) > 3)
-    resume_words = set(w.lower().strip(".,;:()") for w in resume_text.split() if len(w) > 3)
-    
-    common = jd_words.intersection(resume_words)
-    score = min(95, max(30, int((len(common) / max(len(jd_words), 1)) * 120)))
+def _mock_evaluation_fallback(jd_text: str, resume_text: str, threshold: int,
+                              must_have_skills: List[str] = None, matched_skills: List[str] = None,
+                              missing_skills: List[str] = None, hard_skill_score: int = None) -> Dict[str, Any]:
+    """Fallback when Groq is unreachable; uses pure deterministic keyword matching."""
+    if must_have_skills is None:
+        must_have_skills = extract_must_have_skills_from_jd(jd_text)
+        matched_skills, missing_skills = match_skills_in_resume(must_have_skills, resume_text)
+        hard_skill_score, _ = calculate_hard_skill_score(matched_skills, must_have_skills)
+
+    # Heuristic depth score based on resume substance (0-30)
+    word_count = len(resume_text.split())
+    if word_count > 250:
+        depth_score = 22
+    elif word_count > 60:
+        depth_score = 16
+    elif word_count > 15:
+        depth_score = 12
+    else:
+        depth_score = 6
+
+    final_score = min(100, max(0, hard_skill_score + depth_score))
     
     is_fresher = "intern" in resume_text.lower() or "student" in resume_text.lower() or "b.tech" in resume_text.lower()
     exp_level = "Fresher" if is_fresher else "Experienced"
 
+    # Extract name heuristic
+    lines = [line.strip() for line in resume_text.split("\n") if line.strip()]
+    candidate_name = lines[0][:30] if lines else "Candidate"
+
     return {
-        "candidate_name": "Applicant",
-        "match_percentage": score,
+        "candidate_name": candidate_name,
+        "match_percentage": final_score,
+        "hard_skill_score": hard_skill_score,
+        "llm_depth_score": depth_score,
         "experience_level": exp_level,
         "years_of_experience": 1.0 if exp_level == "Fresher" else 3.5,
-        "key_strengths": list(common)[:6] if common else ["Problem Solving", "Python"],
-        "missing_skills": ["System Architecture", "Production Deployment"],
-        "evaluation_summary": f"Candidate demonstrates good alignment with core requirements ({score}% match). Classified as {exp_level}.",
+        "key_strengths": matched_skills if matched_skills else ["Problem Solving", "Python"],
+        "missing_skills": missing_skills if missing_skills else ["Cloud Architecture"],
+        "evaluation_summary": f"Candidate matched {len(matched_skills)}/{len(must_have_skills)} core JD skills. Hard skill score: {hard_skill_score}/70, Depth: {depth_score}/30.",
         "recommended_questions": [
-            "Explain how you would design a REST API using modern web frameworks.",
-            "Describe the data structures you would select for high-throughput caching.",
-            "Walk us through a technical challenge you resolved in your recent project.",
-            "How do you manage asynchronous operations and concurrency?",
+            f"Explain your hands-on experience with {matched_skills[0]}." if matched_skills else "Explain your core development background.",
+            f"How would you approach learning or implementing {missing_skills[0]} on the job?" if missing_skills else "How do you handle production deployments?",
+            "Describe the architecture of a recent backend project you completed.",
+            "How do you design REST APIs for reliability and performance?",
             "What strategies do you adopt for database indexing and query optimization?"
         ],
-        "start_interview": score >= threshold
+        "start_interview": final_score >= threshold
     }
+
 

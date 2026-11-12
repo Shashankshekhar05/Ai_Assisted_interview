@@ -1,7 +1,8 @@
 import uuid
 import json
+import re
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -131,6 +132,64 @@ async def start_interview_endpoint(session_id: str = Form(...)):
     print(f"[START_INTERVIEW] Session: {session_id} | Q1: {q_data['question'][:60]}... | Has Audio: {bool(audio_base64)}")
     return JSONResponse(status_code=200, content=q_data)
 
+# Repeat Intent Safety Configuration
+TECHNICAL_CONTEXT_WORDS = {
+    "function", "functions", "loop", "loops", "variable", "variables",
+    "method", "methods", "class", "classes", "syntax", "code", "coding",
+    "algorithm", "algorithms", "array", "arrays", "database", "query", "queries", "table",
+    "script", "scripts", "component", "components", "regex", "api", "apis", "framework",
+    "library", "module", "server", "docker", "pipeline", "git", "commit", "branch",
+    "return", "yield", "async", "await", "promise", "interface", "struct", "pointer"
+}
+
+REPEAT_INTENT_PHRASES = [
+    # Hindi / Hinglish phrases
+    "repeat karo", "repeat kardo", "repeat kar do", "repeat kijiye", "repeat kijiyega", "repeat kare",
+    "phir se bolo", "phir se boliye", "phir se batao", "phir se bataye", "phir se sunao",
+    "fir se bolo", "fir se boliye", "fir se batao", "fir se bataye", "fir se sunao",
+    "dobara bolo", "dobara boliye", "dobara batao", "dobara bataye", "dobara puchho",
+    "samajh nahi aaya", "samajh nahi aayi", "samajh me nahi aaya", "samajh me nahi aayi",
+    "samjh nahi aaya", "samjh nahi aayi", "samjh me nahi aaya",
+    "ek baar aur", "ek bar aur", "wapas bolo", "wapas boliye",
+    "sunai nahi diya", "sunai nahi diya tha", "kya bola aapne", "kya bole", "kya pucha",
+    
+    # English multi-word phrases
+    "repeat karo please", "please repeat", "repeat please", "repeat that please",
+    "can you repeat", "could you repeat", "would you repeat", "please repeat that",
+    "repeat the question", "repeat that question", "repeat what you said", "repeat what you just said",
+    "say that again", "say again", "once more", "one more time",
+    "pardon me", "beg your pardon", "pardon please",
+    "didn't catch that", "did not catch that", "didn't hear that", "didn't hear you",
+    "come again please", "what was the question"
+]
+
+# Track repeat attempts per session and question: (session_id, question_number) -> int
+session_repeat_counts: Dict[tuple, int] = {}
+
+def check_repeat_intent(text: str) -> bool:
+    """
+    Evaluates candidate transcript for repeat intent with 2 Safety Guards:
+    - Safety #2A: Rejects if text contains technical/programming terms (e.g., 'repeat function', 'repeat loop').
+    - Safety #2B: Rejects bare single-word 'repeat'. Requires explicit multi-word request phrase.
+    """
+    if not text:
+        return False
+    
+    cleaned = text.lower().strip()
+    words = set(re.findall(r'\b[a-zA-Z]+\b', cleaned))
+    
+    # Safety Check: If technical programming vocabulary is present, treat as answer, NOT repeat intent
+    if words.intersection(TECHNICAL_CONTEXT_WORDS):
+        return False
+        
+    # Check for multi-word phrases with boundary padding
+    normalized_phrase = " " + " ".join(re.findall(r'[a-zA-Z0-9]+', cleaned)) + " "
+    for phrase in REPEAT_INTENT_PHRASES:
+        if f" {phrase} " in normalized_phrase:
+            return True
+            
+    return False
+
 @app.post("/api/interview/answer")
 async def answer_interview_endpoint(
     session_id: str = Form(...),
@@ -139,8 +198,12 @@ async def answer_interview_endpoint(
     audio_file: Optional[UploadFile] = File(None)
 ):
     """
-    Receives candidate answer (either speech audio or text), transcribes via Groq Whisper,
+    Receives candidate answer (speech audio or text), transcribes via Groq Whisper,
     and returns next dynamic question with neural TTS.
+    Repeat Intent Safety:
+    1. Max 2 repeats allowed per question.
+    2. 3rd repeat skips question and marks 'No Answer'.
+    3. False-positive resistant: rejects technical terms like 'repeat function'.
     """
     session = get_session_details(session_id)
     if not session:
@@ -158,17 +221,74 @@ async def answer_interview_endpoint(
     if not candidate_answer.strip():
         candidate_answer = "[No audible response detected]"
 
-    # 2. Log Candidate Answer
+    # 2. Check for Repeat Intent with Safety Guards
+    if check_repeat_intent(candidate_answer):
+        count = session_repeat_counts.get((session_id, question_number), 0)
+        
+        # Max Repeat Limit: Max 2 repeats allowed per question
+        if count < 2:
+            session_repeat_counts[(session_id, question_number)] = count + 1
+            print(f"[REPEAT_INTENT] Session: {session_id} | Q{question_number} Repeat count: {count + 1}/2 | Candidate: '{candidate_answer}'")
+            return JSONResponse(status_code=200, content={
+                "is_repeat_request": True,
+                "repeat_count": count + 1,
+                "max_repeats": 2,
+                "candidate_transcript": candidate_answer,
+                "question_number": question_number,
+                "message": f"Repeating current question ({count + 1}/2)."
+            })
+        else:
+            # 3rd repeat attempt -> Skip to next question and mark "No Answer"
+            session_repeat_counts.pop((session_id, question_number), None)
+            skipped_note = "[No Answer: Candidate requested repeat > 2 times. Skipped to next question]"
+            print(f"[REPEAT_MAX_LIMIT_EXCEEDED] Session: {session_id} | Q{question_number} skipped. Candidate exceeded 2 repeats.")
+            
+            # Log candidate "No Answer" in database transcript for final audit
+            log_transcript_entry(session_id, speaker="candidate", text=skipped_note, question_number=question_number)
+            
+            # Advance to next question
+            history = get_session_transcripts(session_id)
+            matched_skills = json.loads(session.get("matched_skills") or "[]")
+            missing_skills = json.loads(session.get("missing_skills") or "[]")
+            next_q_num = question_number + 1
+            
+            q_data = generate_interview_question(
+                session_id=session_id,
+                experience_level=session["experience_level"],
+                role_title=session["role_title"],
+                matched_skills=matched_skills,
+                missing_skills=missing_skills,
+                conversation_history=history,
+                current_question_number=next_q_num,
+                max_questions=settings.MAX_QUESTIONS
+            )
+            
+            if not q_data.get("is_complete"):
+                log_transcript_entry(session_id, speaker="ai", text=q_data["question"], question_number=next_q_num)
+                audio_base64 = text_to_speech_base64(q_data["question"])
+            else:
+                audio_base64 = text_to_speech_base64(q_data["question"])
+                
+            q_data["audio_base64"] = audio_base64
+            q_data["candidate_transcript"] = skipped_note
+            q_data["skipped_due_to_repeat_limit"] = True
+            
+            return JSONResponse(status_code=200, content=q_data)
+
+    # If it was a normal answer, clear repeat count for this question
+    session_repeat_counts.pop((session_id, question_number), None)
+
+    # 3. Log Candidate Answer to database for final audit
     log_transcript_entry(session_id, speaker="candidate", text=candidate_answer, question_number=question_number)
 
-    # 3. Fetch running conversation history
+    # 4. Fetch running conversation history
     history = get_session_transcripts(session_id)
     matched_skills = json.loads(session.get("matched_skills") or "[]")
     missing_skills = json.loads(session.get("missing_skills") or "[]")
 
     next_q_num = question_number + 1
 
-    # 4. Generate Next Question
+    # 5. Generate Next Question
     q_data = generate_interview_question(
         session_id=session_id,
         experience_level=session["experience_level"],
@@ -181,10 +301,12 @@ async def answer_interview_endpoint(
     )
 
     # Log AI next question
-    log_transcript_entry(session_id, speaker="ai", text=q_data["question"], question_number=next_q_num)
+    if not q_data.get("is_complete"):
+        log_transcript_entry(session_id, speaker="ai", text=q_data["question"], question_number=next_q_num)
+        audio_base64 = text_to_speech_base64(q_data["question"])
+    else:
+        audio_base64 = text_to_speech_base64(q_data["question"])
 
-    # Generate in-memory neural voice
-    audio_base64 = text_to_speech_base64(q_data["question"])
     q_data["audio_base64"] = audio_base64
     q_data["candidate_transcript"] = candidate_answer
 
@@ -227,6 +349,19 @@ async def set_recruiter_decision_endpoint(session_id: str, payload: RecruiterDec
     """Records final recruiter hiring verdict in database."""
     update_decision(session_id, payload.decision)
     return JSONResponse(status_code=200, content={"status": "DECISION_UPDATED", "decision": payload.decision})
+
+# In-memory cache for audio warnings
+_TTS_WARNING_CACHE = {}
+
+@app.get("/api/tts")
+async def get_tts_audio_endpoint(text: str):
+    """Generates neural Edge-TTS audio on demand for voice alerts and proctoring warnings."""
+    clean_text = text.strip()
+    if not clean_text:
+        return JSONResponse(status_code=400, content={"error": "Text cannot be empty"})
+    if clean_text not in _TTS_WARNING_CACHE:
+        _TTS_WARNING_CACHE[clean_text] = text_to_speech_base64(clean_text)
+    return JSONResponse(status_code=200, content={"audio_base64": _TTS_WARNING_CACHE[clean_text], "text": clean_text})
 
 # --- Mount Frontend Static Files ---
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"

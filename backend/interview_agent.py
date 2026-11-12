@@ -49,10 +49,19 @@ def generate_interview_question(
         }
 
     # Structured 10-question roadmap
-    if current_question_number <= 2:
+    if current_question_number == 1:
         question_stage_prompt = f"""
-STAGE: QUESTIONS 1-2 (Resume & Background Validation)
-- Focus heavily on candidate's past projects and tools listed on their resume ({', '.join(matched_skills)}).
+STAGE: QUESTION 1 (Warm Greeting & Candidate Technical Introduction)
+- Welcome the candidate warmly to their technical interview for the {role_title} position.
+- Introduce yourself briefly as their AI Technical Interviewer.
+- Ask the candidate to introduce themselves: their background, core technical skills, and a brief highlight of what they have been building or working on recently.
+- Keep the introduction friendly, natural, and within 2-3 sentences so it is engaging when spoken aloud.
+"""
+    elif current_question_number == 2:
+        question_stage_prompt = f"""
+STAGE: QUESTION 2 (Follow-Up on Candidate's Introduction & Resume Projects)
+- Acknowledge their introduction and any specific tools, projects, or questions they brought up.
+- Dive deeper into candidate's past projects and tools listed on their resume ({', '.join(matched_skills)}).
 - Ask about architectural decisions, roles, or technical challenges in their specific past work.
 """
     elif current_question_number <= 5:
@@ -93,25 +102,49 @@ You are conducting a Technical Deep Dive for an EXPERIENCED engineer.
 
     client = Groq(api_key=settings.GROQ_API_KEY, base_url=settings.GROQ_BASE_URL)
 
+    # Extract Candidate's Initial Self-Introduction (Anchor Context to remember throughout interview)
+    candidate_intro = None
+    for entry in conversation_history:
+        if entry.get("question_number") == 1 and entry.get("speaker") == "candidate":
+            candidate_intro = entry.get("text", "").strip()
+            break
+
+    intro_context_block = f"\nCandidate's Stated Introduction (Remember & Anchor Context):\n\"{candidate_intro}\"\n" if candidate_intro else ""
+
     system_prompt = f"""
 {persona_instructions}
 
 Role Title: {role_title}
 Candidate Level: {experience_level}
 Key Skills on Resume: {', '.join(matched_skills)}
-Skills in JD to Probe: {', '.join(missing_skills)}
+Skills in JD to Probe: {', '.join(missing_skills)}{intro_context_block}
 Current Question Index: {current_question_number} of {max_questions}
 
-Guidelines:
-1. If the candidate's last answer was vague or incomplete, ask a brief 1-sentence technical follow-up to clarify.
-2. Otherwise, introduce a fresh, targeted technical scenario based on the skills above.
-3. Keep the question crisp, clear, and conversational (under 3 sentences so it is natural when spoken aloud via Text-To-Speech).
-4. Return ONLY a valid JSON object matching the schema below.
+MANDATORY INTERACTION GUIDELINES:
+1. CANDIDATE QUESTIONS & QUERIES:
+   - Carefully inspect the candidate's latest response.
+   - If the candidate asked a technical question, asked for clarification, or asked about the company/tech-stack:
+     YOU MUST FIRST ANSWER their question accurately, concisely, and professionally in 1-2 sentences.
+     THEN, smoothly transition into the next interview question! Never ignore candidate questions.
+
+2. INTRODUCTION RETENTION:
+   - Always remember and anchor the candidate's stated experience, favorite tools, and projects mentioned in their introduction.
+   - Reference their background naturally in your questions.
+
+3. ADAPTIVE QUESTIONING:
+   - If the candidate's last answer was vague or incomplete, ask a brief 1-sentence technical follow-up to clarify.
+   - Otherwise, advance to the designated stage outlined in your instructions.
+
+4. CONVERSATIONAL TONE:
+   - Keep your response conversational, concise, and natural (under 3-4 sentences total) so it sounds natural when spoken aloud via Text-To-Speech.
+
+5. JSON FORMAT:
+   - Return strictly a valid JSON object matching the schema below.
 
 JSON Schema:
 {{
-  "question": "string (the question to speak aloud to the candidate)",
-  "focus_area": "string (e.g., Data Structures, System Scalability, Database Indexing, Error Handling)",
+  "question": "string (the exact text to speak aloud, including your answer to any candidate question followed by your next question)",
+  "focus_area": "string (e.g., Introduction, Data Structures, System Scalability, Database Optimization)",
   "expected_key_points": ["2-3 key technical concepts candidate should mention"]
 }}
 """
@@ -148,7 +181,7 @@ JSON Schema:
 def _mock_question_fallback(experience_level: str, question_num: int, role_title: str) -> Dict[str, Any]:
     """10-question fallback roadmap blending resume and JD topics."""
     fresher_bank = [
-        "Welcome! To begin, could you walk us through the most challenging software project listed on your resume and your specific role?",
+        "Hello and welcome! To get started with your technical interview, could you briefly introduce yourself, your technical background, and what projects you have been working on recently?",
         "In that project, what was the most difficult bug or technical obstacle you encountered, and how did you resolve it?",
         "Could you explain the core differences between a Process and a Thread in modern operating systems?",
         "How would you explain the difference between an SQL INNER JOIN and a LEFT JOIN with a simple example?",
@@ -161,7 +194,7 @@ def _mock_question_fallback(experience_level: str, question_num: int, role_title
     ]
     
     experienced_bank = [
-        f"Welcome! Looking at your experience in {role_title}, walk us through an architecture you designed that had to handle production scale.",
+        f"Hello and welcome to your technical interview for the {role_title} role! To begin, could you introduce yourself, your engineering background, and key areas of technical expertise?",
         "In your past production systems, how did you balance database consistency versus availability during network partitions or high load?",
         "How do you approach database connection pooling and avoiding connection starvation under sudden traffic surges?",
         "Describe a critical production incident, memory leak, or deadlock you diagnosed. What profiling tools and mitigation steps did you use?",

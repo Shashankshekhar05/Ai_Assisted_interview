@@ -1,136 +1,61 @@
 // Conversational Voice Interview Controller
 
-// ElevenLabs Style Reactive Canvas Waveform / Glowing Voice Orb
-let audioCtx = null;
-let analyser = null;
-let dataArray = null;
-let orbCanvas = null;
-let orbCtx = null;
-let orbAnimationId = null;
-
-function initAudioVisualizerCanvas() {
-    orbCanvas = document.getElementById('audio-orb-canvas');
-    if (!orbCanvas) return;
-    orbCtx = orbCanvas.getContext('2d');
-    
-    // Start drawing resting/reactive loop
-    drawGlowingVoiceOrb();
-}
-
-function drawGlowingVoiceOrb() {
-    if (!orbCtx || !orbCanvas) return;
-    orbCtx.clearRect(0, 0, orbCanvas.width, orbCanvas.height);
-
-    const centerX = orbCanvas.width / 2;
-    const centerY = orbCanvas.height / 2;
-    const time = Date.now() * 0.003;
-
-    // Determine state
-    let baseRadius = 55;
-    let waveAmplitude = 12;
-    let colorCore = '#38BDF8';
-    let glowColor = 'rgba(56, 189, 248, 0.4)';
-
-    if (isRecording) {
-        baseRadius = 62;
-        waveAmplitude = 20;
-        colorCore = '#F43F5E';
-        glowColor = 'rgba(244, 63, 94, 0.55)';
-    } else if (ttsAudio && !ttsAudio.paused) {
-        baseRadius = 60;
-        waveAmplitude = 18;
-        colorCore = '#38BDF8';
-        glowColor = 'rgba(56, 189, 248, 0.55)';
-    }
-
-    // Outer concentric pulsating halos
-    orbCtx.save();
-    for (let i = 2; i >= 1; i--) {
-        const haloRadius = baseRadius + (i * 18) + (Math.sin(time + i) * 6);
-        orbCtx.beginPath();
-        orbCtx.arc(centerX, centerY, haloRadius, 0, Math.PI * 2);
-        orbCtx.strokeStyle = glowColor.replace('0.4', '0.12').replace('0.55', '0.15');
-        orbCtx.lineWidth = 1.5;
-        orbCtx.stroke();
-    }
-
-    // Dynamic wave perimeter around core
-    orbCtx.beginPath();
-    const points = 60;
-    for (let i = 0; i < points; i++) {
-        const angle = (i / points) * Math.PI * 2;
-        const wave = Math.sin(angle * 6 + time * 4) * (waveAmplitude * 0.35)
-                   + Math.cos(angle * 3 - time * 2) * (waveAmplitude * 0.25);
-        const r = baseRadius + wave;
-        const x = centerX + Math.cos(angle) * r;
-        const y = centerY + Math.sin(angle) * r;
-
-        if (i === 0) orbCtx.moveTo(x, y);
-        else orbCtx.lineTo(x, y);
-    }
-    orbCtx.closePath();
-
-    // Fill Core with Gradient
-    const grad = orbCtx.createRadialGradient(centerX, centerY, 5, centerX, centerY, baseRadius + 15);
-    grad.addColorStop(0, '#FFFFFF');
-    grad.addColorStop(0.4, colorCore);
-    grad.addColorStop(1, 'rgba(7, 9, 14, 0.95)');
-
-    orbCtx.fillStyle = grad;
-    orbCtx.shadowColor = colorCore;
-    orbCtx.shadowBlur = 30;
-    orbCtx.fill();
-    orbCtx.restore();
-
-    orbAnimationId = requestAnimationFrame(drawGlowingVoiceOrb);
-}
+// Global Recording & Audio State
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
 
 function toggleTranscriptBox() {
     const box = document.getElementById('transcript-toggle-area');
     if (box) box.classList.toggle('hidden');
 }
 
-// 50-Second Silence & Inactivity Countdown Timer State
-let silenceInterval = null;
-let silenceSecondsLeft = 50;
-const MAX_SILENCE_SECONDS = 50;
+// Pre-answer Thinking Time Countdown (30 seconds to begin speaking)
+let thinkingInterval = null;
+let thinkingSecondsLeft = 30;
+const MAX_THINKING_SECONDS = 30;
 
 // Audio player element
-const ttsAudio = document.getElementById('tts-audio-player');
+let activeAudioInstance = null;
 
-function startSilenceCountdown() {
-    stopSilenceCountdown();
-    silenceSecondsLeft = MAX_SILENCE_SECONDS;
-    
+function startThinkingCountdown() {
+    stopThinkingCountdown();
+    thinkingSecondsLeft = MAX_THINKING_SECONDS;
+
     const container = document.getElementById('silence-timer-container');
     const display = document.getElementById('silence-timer-display');
-    if (container) container.classList.remove('hidden');
-    if (container) container.classList.add('flex');
-    if (display) display.innerText = `${silenceSecondsLeft}s`;
+    if (container) {
+        container.classList.remove('hidden');
+        container.classList.add('flex');
+    }
+    if (display) {
+        display.innerText = `${thinkingSecondsLeft}s`;
+        display.className = "font-bold text-amber-400 font-mono";
+    }
 
-    silenceInterval = setInterval(() => {
-        silenceSecondsLeft--;
+    thinkingInterval = setInterval(() => {
+        thinkingSecondsLeft--;
         if (display) {
-            display.innerText = `${silenceSecondsLeft}s`;
-            if (silenceSecondsLeft <= 10) {
+            display.innerText = `${thinkingSecondsLeft}s`;
+            if (thinkingSecondsLeft <= 10) {
                 display.className = "font-bold text-red-500 font-mono animate-pulse";
             } else {
                 display.className = "font-bold text-amber-400 font-mono";
             }
         }
 
-        // If 50 seconds elapse with silence / no answer
-        if (silenceSecondsLeft <= 0) {
-            stopSilenceCountdown();
+        // If candidate does not begin speaking within 30 seconds
+        if (thinkingSecondsLeft <= 0) {
+            stopThinkingCountdown();
             handleInactivityTimeout();
         }
     }, 1000);
 }
 
-function stopSilenceCountdown() {
-    if (silenceInterval) {
-        clearInterval(silenceInterval);
-        silenceInterval = null;
+function stopThinkingCountdown() {
+    if (thinkingInterval) {
+        clearInterval(thinkingInterval);
+        thinkingInterval = null;
     }
     const container = document.getElementById('silence-timer-container');
     if (container) {
@@ -139,21 +64,16 @@ function stopSilenceCountdown() {
     }
 }
 
+// Aliases for unified state management
+function startSilenceCountdown() { startThinkingCountdown(); }
+function stopSilenceCountdown() { stopThinkingCountdown(); }
+
 async function handleInactivityTimeout() {
-    if (isRecording) {
-        // Stop recording if running
-        try {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-        } catch (e) {}
-        isRecording = false;
-        micBtn.classList.remove('is-recording');
-    }
+    stopActiveMicrophoneRecording();
 
     appendTranscriptEntry('candidate', '[No answer provided: candidate paused for >50s]');
     updateAiStatus('50s Inactivity detected. Advancing to next question...', 'text-amber-400');
-    
+
     // Automatically submit timeout notice to advance question
     submitCandidateAnswer(null, "[Candidate took >50s pause / silence without answering]");
 }
@@ -166,13 +86,13 @@ async function startInterviewRoom() {
 
     if (typeof showTab === 'function') showTab('interview');
     else if (typeof showView === 'function') showView('interview');
-    
+
     appState.isInterviewActive = true;
     appState.currentQuestionNumber = 1;
 
     const candTitle = document.getElementById('interview-candidate-title');
     if (candTitle) candTitle.innerText = `${appState.candidateName} — Live Interview Session`;
-    
+
     const roleBadge = document.getElementById('interview-role-badge');
     if (roleBadge) roleBadge.innerText = `Role: ${appState.roleTitle}`;
 
@@ -204,27 +124,117 @@ initSpeechVoices();
 window.lastQuestionAudioBase64 = null;
 window.lastQuestionText = "";
 
+// Persistent, Autoplay-Immune Web Audio Engine
+let globalAudioContext = null;
+let currentSourceNode = null;
+
+function getOrCreateAudioContext() {
+    try {
+        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        if (!globalAudioContext && AudioCtxClass) {
+            globalAudioContext = new AudioCtxClass();
+        }
+        if (globalAudioContext && globalAudioContext.state === 'suspended') {
+            globalAudioContext.resume();
+        }
+    } catch (e) {
+        console.warn('AudioContext init notice:', e);
+    }
+    return globalAudioContext;
+}
+
+function base64ToArrayBuffer(base64String) {
+    const cleanB64 = base64String.replace(/^data:audio\/\w+;base64,/, '').trim();
+    const binary = window.atob(cleanB64);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+function stopAllAiSpeech() {
+    if (currentSourceNode) {
+        try {
+            currentSourceNode.onended = null;
+            currentSourceNode.stop();
+        } catch (e) { }
+        currentSourceNode = null;
+    }
+    if (activeAudioInstance) {
+        try {
+            activeAudioInstance.pause();
+            activeAudioInstance.src = "";
+        } catch (e) { }
+        activeAudioInstance = null;
+    }
+    if ('speechSynthesis' in window) {
+        try {
+            window.speechSynthesis.cancel();
+        } catch (e) { }
+    }
+    const waveEq = document.getElementById('waveform-eq');
+    if (waveEq) waveEq.classList.remove('wave-active');
+}
+
+// Complete teardown for all microphone recording, VAD detection, and AI speech playback
+window.stopInterviewAudioAndMic = function () {
+    try {
+        stopSilenceCountdown();
+    } catch (e) { }
+
+    try {
+        stopActiveMicrophoneRecording();
+    } catch (e) { }
+
+    try {
+        stopAllAiSpeech();
+    } catch (e) { }
+
+    try {
+        if (vadAudioContext && vadAudioContext.state !== 'closed') {
+            vadAudioContext.close();
+            vadAudioContext = null;
+        }
+    } catch (e) { }
+
+    try {
+        if (globalAudioContext && globalAudioContext.state !== 'closed') {
+            globalAudioContext.suspend();
+        }
+    } catch (e) { }
+
+    if ('speechSynthesis' in window) {
+        try {
+            window.speechSynthesis.cancel();
+        } catch (e) { }
+    }
+
+    const micBtn = document.getElementById('btn-mic-record');
+    if (micBtn) micBtn.classList.remove('is-recording');
+
+    const waveEq = document.getElementById('waveform-eq');
+    if (waveEq) waveEq.classList.remove('wave-active');
+
+    const replayBtnText = document.getElementById('btn-replay-audio-text');
+    if (replayBtnText) replayBtnText.innerText = "Listen";
+};
+
 function primeAudioOnUserGesture() {
     try {
+        getOrCreateAudioContext();
         if ('speechSynthesis' in window) {
             window.speechSynthesis.resume();
         }
-        if (ttsAudio) {
-            ttsAudio.muted = false;
-            ttsAudio.volume = 1.0;
-            // Play a silent 1-sample WAV to prime audio engine without making sound
-            if (!ttsAudio.src || ttsAudio.paused) {
-                const silentWav = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-                ttsAudio.src = silentWav;
-                const p = ttsAudio.play();
-                if (p) p.then(() => ttsAudio.pause()).catch(() => {});
-            }
-        }
-    } catch (e) {}
+    } catch (e) { }
 }
 
-window.replayCurrentQuestionAudio = function() {
-    primeAudioOnUserGesture();
+window.replayCurrentQuestionAudio = function () {
+    const ctx = getOrCreateAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+        ctx.resume();
+    }
     const replayBtn = document.getElementById('btn-replay-audio');
     if (replayBtn) {
         replayBtn.classList.remove('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
@@ -265,7 +275,7 @@ async function fetchFirstQuestion() {
 
 function handleAiQuestionReceived(data) {
     appState.currentQuestionNumber = data.question_number || appState.currentQuestionNumber;
-    
+
     // Cache latest audio and question text for manual replay or retry
     window.lastQuestionAudioBase64 = data.audio_base64 || null;
     window.lastQuestionText = data.question || "";
@@ -293,14 +303,20 @@ function handleAiQuestionReceived(data) {
     }
 
     if (data.is_complete) {
-        stopSilenceCountdown();
-        updateAiStatus('Interview Completed', 'text-emerald-400');
-        if (typeof stopAllStreamsAndProctoring === 'function') {
-            stopAllStreamsAndProctoring();
+        if (typeof window.stopAllHardwareMedia === 'function') {
+            window.stopAllHardwareMedia();
+        } else {
+            stopSilenceCountdown();
+            stopActiveMicrophoneRecording();
+            stopAllAiSpeech();
+            if (typeof stopAllStreamsAndProctoring === 'function') {
+                stopAllStreamsAndProctoring();
+            }
         }
+        updateAiStatus('Interview Completed', 'text-emerald-400');
         setTimeout(() => {
             loadFinalReport();
-        }, 2000);
+        }, 1500);
     }
 }
 
@@ -313,11 +329,12 @@ let isSpeaking = false;
 let speechStartTime = 0;
 let silenceAfterSpeechStartTime = 0;
 const SPEECH_VOLUME_THRESHOLD = 0.035; // Sensitivity threshold for candidate voice
-const AUTO_SUBMIT_SILENCE_MS = 2500;   // 2.5 seconds of silence after candidate speaks to auto-submit answer
+const AUTO_SUBMIT_SILENCE_MS = 5000;   // 5 seconds silence after candidate finishes answer to auto-advance
 
 function playAiAudio(base64Uri) {
-    stopSilenceCountdown();
-    stopActiveMicrophoneRecording();
+    try { stopSilenceCountdown(); } catch (e) { }
+    try { stopActiveMicrophoneRecording(); } catch (e) { }
+    try { stopAllAiSpeech(); } catch (e) { }
 
     updateAiStatus('AI Speaking...', 'text-indigo-400 font-bold');
 
@@ -327,52 +344,108 @@ function playAiAudio(base64Uri) {
     const replayBtnText = document.getElementById('btn-replay-audio-text');
     if (replayBtnText) replayBtnText.innerText = "Speaking...";
 
-    // Handle in-memory audio playback
-    if (base64Uri && base64Uri.length > 100) {
-        ttsAudio.muted = false;
-        ttsAudio.volume = 1.0;
+    // 1. PRIMARY: Web Audio API decoding (Autoplay-Immune when audioCtx is resumed)
+    const ctx = getOrCreateAudioContext();
+    if (ctx && base64Uri && base64Uri.length > 100) {
+        try {
+            const arrayBuffer = base64ToArrayBuffer(base64Uri);
+            ctx.decodeAudioData(arrayBuffer, (decodedAudioBuffer) => {
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
 
-        ttsAudio.onended = () => {
-            if (waveEq) waveEq.classList.remove('wave-active');
-            if (replayBtnText) replayBtnText.innerText = "Replay";
-            onAiQuestionFinishedSpeaking();
-        };
+                const source = ctx.createBufferSource();
+                source.buffer = decodedAudioBuffer;
+                source.connect(ctx.destination);
 
-        ttsAudio.onerror = (e) => {
-            console.warn('Audio tag playback error, falling back to Web Speech:', e);
-            if (replayBtnText) replayBtnText.innerText = "Replay";
-            const activeText = window.lastQuestionText || document.getElementById('ai-active-question-text')?.innerText || '';
-            playBrowserSpeechFallback(activeText);
-        };
+                currentSourceNode = source;
 
-        ttsAudio.src = base64Uri;
-        const playPromise = ttsAudio.play();
+                source.onended = () => {
+                    currentSourceNode = null;
+                    if (waveEq) waveEq.classList.remove('wave-active');
+                    if (replayBtnText) replayBtnText.innerText = "Replay";
+                    onAiQuestionFinishedSpeaking();
+                };
 
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
+                source.start(0);
+
                 const replayBtn = document.getElementById('btn-replay-audio');
                 if (replayBtn) {
                     replayBtn.classList.remove('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
                 }
-            }).catch(e => {
-                console.warn('Audio auto-play policy restricted by browser:', e);
-                // Highlight Listen button so candidate can click once to listen
-                const replayBtn = document.getElementById('btn-replay-audio');
-                if (replayBtn) {
-                    replayBtn.classList.add('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
-                    if (replayBtnText) replayBtnText.innerText = "🔊 Tap to Listen";
-                }
-                updateAiStatus('Tap "Listen" to hear AI Question', 'text-amber-400 font-bold');
-
-                // Fallback to Web Speech
-                const activeText = window.lastQuestionText || document.getElementById('ai-active-question-text')?.innerText || '';
-                playBrowserSpeechFallback(activeText);
+            }, (decodeError) => {
+                console.warn('Web Audio decode failed, trying HTML5 Audio fallback:', decodeError);
+                playHtml5AudioFallback(base64Uri);
             });
+            return;
+        } catch (err) {
+            console.warn('Web Audio playback error, trying HTML5 fallback:', err);
         }
-    } else {
-        // Fallback to browser SpeechSynthesis if audio base64 is empty
-        const activeText = window.lastQuestionText || document.getElementById('ai-active-question-text')?.innerText || '';
-        playBrowserSpeechFallback(activeText);
+    }
+
+    // 2. SECONDARY: HTML5 Audio fallback
+    playHtml5AudioFallback(base64Uri);
+}
+
+function playHtml5AudioFallback(base64Uri) {
+    if (!base64Uri || base64Uri.length < 100) {
+        const text = window.lastQuestionText || document.getElementById('ai-active-question-text')?.innerText || '';
+        playBrowserSpeechFallback(text);
+        return;
+    }
+
+    let audioSrc = base64Uri;
+    if (audioSrc.startsWith('data:audio/mp3;')) {
+        audioSrc = audioSrc.replace('data:audio/mp3;', 'data:audio/mpeg;');
+    }
+
+    activeAudioInstance = new Audio();
+    activeAudioInstance.src = audioSrc;
+    activeAudioInstance.volume = 1.0;
+
+    const waveEq = document.getElementById('waveform-eq');
+    const replayBtnText = document.getElementById('btn-replay-audio-text');
+
+    activeAudioInstance.onended = () => {
+        activeAudioInstance = null;
+        if (waveEq) waveEq.classList.remove('wave-active');
+        if (replayBtnText) replayBtnText.innerText = "Replay";
+        onAiQuestionFinishedSpeaking();
+    };
+
+    activeAudioInstance.onerror = (e) => {
+        console.warn('HTML5 Audio error, trying SpeechSynthesis fallback:', e);
+        activeAudioInstance = null;
+        const text = window.lastQuestionText || document.getElementById('ai-active-question-text')?.innerText || '';
+        playBrowserSpeechFallback(text);
+    };
+
+    const playPromise = activeAudioInstance.play();
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            const replayBtn = document.getElementById('btn-replay-audio');
+            if (replayBtn) {
+                replayBtn.classList.remove('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
+            }
+        }).catch(e => {
+            console.warn('HTML5 Audio auto-play policy restricted by browser:', e);
+            const replayBtn = document.getElementById('btn-replay-audio');
+            if (replayBtn) {
+                replayBtn.classList.add('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
+                if (replayBtnText) replayBtnText.innerText = "🔊 Tap to Listen";
+            }
+            updateAiStatus('Tap "Listen" to hear AI Question', 'text-amber-400 font-bold');
+
+            // Attach a one-time click listener anywhere on document to trigger playback on click
+            const playOnDocumentClick = () => {
+                document.removeEventListener('click', playOnDocumentClick);
+                if (replayBtn) {
+                    replayBtn.classList.remove('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
+                }
+                replayCurrentQuestionAudio();
+            };
+            document.addEventListener('click', playOnDocumentClick, { once: true, passive: true });
+        });
     }
 }
 
@@ -392,10 +465,10 @@ function playBrowserSpeechFallback(text) {
         // Select the best natural English voice
         const voices = availableVoices.length > 0 ? availableVoices : (window.speechSynthesis.getVoices() || []);
         const enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google') || v.name.includes('Jenny') || v.name.includes('Aria') || v.name.includes('Online')))
-                     || voices.find(v => v.lang.startsWith('en'))
-                     || voices[0];
+            || voices.find(v => v.lang.startsWith('en'))
+            || voices[0];
         if (enVoice) utterance.voice = enVoice;
-        
+
         const waveEq = document.getElementById('waveform-eq');
         const replayBtnText = document.getElementById('btn-replay-audio-text');
 
@@ -414,8 +487,12 @@ function playBrowserSpeechFallback(text) {
         utterance.onerror = (err) => {
             console.warn('SpeechSynthesis error:', err);
             if (waveEq) waveEq.classList.remove('wave-active');
-            if (replayBtnText) replayBtnText.innerText = "Replay";
-            onAiQuestionFinishedSpeaking();
+            const replayBtn = document.getElementById('btn-replay-audio');
+            if (replayBtn) {
+                replayBtn.classList.add('animate-bounce', 'ring-2', 'ring-amber-400', 'bg-amber-600');
+            }
+            if (replayBtnText) replayBtnText.innerText = "🔊 Tap to Listen";
+            updateAiStatus('Tap "Listen" to hear AI Question', 'text-amber-400 font-bold');
         };
 
         // Chromium speech bug workaround: keep speaking alive if longer than 15s
@@ -434,12 +511,90 @@ function playBrowserSpeechFallback(text) {
     }
 }
 
+// Pre-cached audio dictionary for instant warning delivery via Edge-TTS
+const warningAudioMap = {
+    phone: null,
+    face: null
+};
+
+// 10-second Warning Voice Cooldown to prevent voice overlap
+let lastWarningVoiceTime = 0;
+const WARNING_VOICE_COOLDOWN_MS = 10000;
+
+window.speakWarning = async function (type) {
+    const now = Date.now();
+    if (now - lastWarningVoiceTime < WARNING_VOICE_COOLDOWN_MS) {
+        return; // Suppress duplicate speech if spoken in the last 10 seconds
+    }
+    lastWarningVoiceTime = now;
+
+    let text = "Please do not move, look at the screen";
+    let key = "face";
+    const lower = String(type || '').toLowerCase();
+    if (lower.includes('phone') || lower.includes('device') || lower.includes('cell')) {
+        text = "Please do not use any other device";
+        key = "phone";
+    }
+
+    try {
+        if (!warningAudioMap[key]) {
+            const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.audio_base64) {
+                    warningAudioMap[key] = data.audio_base64;
+                }
+            }
+        }
+
+        if (warningAudioMap[key]) {
+            playWarningAudioBuffer(warningAudioMap[key]);
+            return;
+        }
+    } catch (e) {
+        console.warn('Edge-TTS warning audio notice:', e);
+    }
+
+    // Secondary Fallback: browser SpeechSynthesis
+    if ('speechSynthesis' in window) {
+        try {
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.resume();
+            const u = new SpeechSynthesisUtterance(text);
+            u.rate = 1.0;
+            window.speechSynthesis.speak(u);
+        } catch (e) { }
+    }
+};
+
+function playWarningAudioBuffer(base64Uri) {
+    const ctx = getOrCreateAudioContext();
+    if (ctx) {
+        try {
+            const arrayBuffer = base64ToArrayBuffer(base64Uri);
+            ctx.decodeAudioData(arrayBuffer, (decodedBuffer) => {
+                if (ctx.state === 'suspended') ctx.resume();
+                const source = ctx.createBufferSource();
+                source.buffer = decodedBuffer;
+                source.connect(ctx.destination);
+                source.start(0);
+            }, () => {
+                const sound = new Audio(base64Uri);
+                sound.play().catch(() => { });
+            });
+            return;
+        } catch (e) { }
+    }
+    const sound = new Audio(base64Uri);
+    sound.play().catch(() => { });
+}
+
 // Automatically triggers when AI finishes asking its question
 function onAiQuestionFinishedSpeaking() {
-    updateAiStatus('Listening (Speak naturally, auto-records)...', 'text-emerald-600 font-bold');
-    
-    // 1. Start the 50-second overall timeout countdown
-    startSilenceCountdown();
+    updateAiStatus('Thinking Time (30s to prepare, speak when ready)...', 'text-sky-400 font-bold');
+
+    // 1. Start the 30-second thinking time countdown
+    startThinkingCountdown();
 
     // 2. AUTOMATICALLY turn on candidate microphone & start recording (Zero manual click needed)
     startRecordingAutomatically();
@@ -458,7 +613,7 @@ async function startRecordingAutomatically() {
 
         mediaRecorder.start(250); // Record chunks every 250ms
         isRecording = true;
-        
+
         const micBtn = document.getElementById('btn-mic-record');
         if (micBtn) micBtn.classList.add('is-recording');
 
@@ -472,7 +627,7 @@ async function startRecordingAutomatically() {
 
 function initVoiceActivityDetection(stream) {
     if (vadCheckInterval) clearInterval(vadCheckInterval);
-    
+
     try {
         vadAudioContext = new (window.AudioContext || window.webkitAudioContext)();
         vadAnalyser = vadAudioContext.createAnalyser();
@@ -515,12 +670,20 @@ function initVoiceActivityDetection(stream) {
             } else {
                 // Candidate is quiet
                 if (isSpeaking) {
-                    // Candidate has spoken something and is now quiet
+                    // Candidate has spoken and is now pausing
                     if (!silenceAfterSpeechStartTime) {
                         silenceAfterSpeechStartTime = now;
-                    } else if (now - silenceAfterSpeechStartTime >= AUTO_SUBMIT_SILENCE_MS) {
-                        // Candidate stopped speaking for 2.5 seconds -> AUTOMATICALLY SUBMIT ANSWER
+                    }
+                    const silentElapsed = now - silenceAfterSpeechStartTime;
+                    const secLeft = Math.max(1, Math.ceil((AUTO_SUBMIT_SILENCE_MS - silentElapsed) / 1000));
+                    
+                    updateAiStatus(`Answer detected. Submitting in ${secLeft}s...`, 'text-amber-400 font-bold');
+
+                    if (silentElapsed >= AUTO_SUBMIT_SILENCE_MS) {
+                        // Candidate stopped speaking for 5 seconds -> AUTOMATICALLY ADVANCE TO NEXT QUESTION
                         clearInterval(vadCheckInterval);
+                        vadCheckInterval = null;
+                        updateAiStatus('Evaluating response...', 'text-violet-400 font-bold');
                         stopRecordingAndSubmit();
                     }
                 }
@@ -533,22 +696,32 @@ function initVoiceActivityDetection(stream) {
 }
 
 function stopActiveMicrophoneRecording() {
-    if (vadCheckInterval) {
-        clearInterval(vadCheckInterval);
-        vadCheckInterval = null;
+    try {
+        if (vadCheckInterval) {
+            clearInterval(vadCheckInterval);
+            vadCheckInterval = null;
+        }
+        if (vadAudioContext && vadAudioContext.state !== 'closed') {
+            try { vadAudioContext.close(); } catch (e) { }
+            vadAudioContext = null;
+        }
+        if (typeof mediaRecorder !== 'undefined' && mediaRecorder && mediaRecorder.state !== 'inactive') {
+            try {
+                mediaRecorder.stop();
+            } catch (e) { }
+            try {
+                if (mediaRecorder.stream) {
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+            } catch (e) { }
+        }
+    } catch (e) {
+        console.warn('stopActiveMicrophoneRecording notice:', e);
+    } finally {
+        isRecording = false;
+        const micBtn = document.getElementById('btn-mic-record');
+        if (micBtn) micBtn.classList.remove('is-recording');
     }
-    if (vadAudioContext && vadAudioContext.state !== 'closed') {
-        try { vadAudioContext.close(); } catch (e) {}
-    }
-    if (mediaRecorder && isRecording) {
-        try {
-            mediaRecorder.stop();
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-        } catch (e) {}
-    }
-    isRecording = false;
-    const micBtn = document.getElementById('btn-mic-record');
-    if (micBtn) micBtn.classList.remove('is-recording');
 }
 
 function updateAiStatus(statusText, colorClass = 'text-sky-400') {
@@ -563,7 +736,7 @@ function appendTranscriptEntry(speaker, text) {
     const box = document.getElementById('live-transcript-feed') || document.getElementById('interview-transcript-box');
     if (!box) return;
     const msgDiv = document.createElement('div');
-    
+
     if (speaker === 'ai') {
         msgDiv.className = "flex items-start space-x-2 text-left";
         msgDiv.innerHTML = `
@@ -585,7 +758,7 @@ function appendTranscriptEntry(speaker, text) {
             </div>
         `;
     }
-    
+
     box.appendChild(msgDiv);
     box.scrollTop = box.scrollHeight;
 }
@@ -635,7 +808,7 @@ function stopRecordingAndSubmit() {
     // Stop tracks
     try {
         mediaRecorder.stream.getTracks().forEach(track => track.stop());
-    } catch (e) {}
+    } catch (e) { }
 
     isRecording = false;
     if (micBtn) micBtn.classList.remove('is-recording');
@@ -651,6 +824,7 @@ document.getElementById('btn-send-text-answer')?.addEventListener('click', () =>
     const val = textInput.value.trim();
     if (!val) return;
     textInput.value = '';
+
     submitCandidateAnswer(null, val);
 });
 
@@ -684,7 +858,30 @@ async function submitCandidateAnswer(audioBlob, textAnswer) {
 
         const data = await res.json();
 
-        // Render transcribed candidate answer
+        // 1. Candidate requested to repeat current question (within max 2 limit)
+        if (data.is_repeat_request) {
+            const countStr = data.repeat_count && data.max_repeats ? ` (${data.repeat_count}/${data.max_repeats})` : '';
+            updateAiStatus(`Repeating question${countStr}...`, 'text-amber-400 font-bold');
+            if (data.candidate_transcript) {
+                appendTranscriptEntry('candidate', `${data.candidate_transcript} 🔄 (Repeat Request${countStr})`);
+            }
+            // Replay current question audio immediately
+            replayCurrentQuestionAudio();
+            return;
+        }
+
+        // 2. Candidate exceeded max repeats (> 2): Question skipped to prevent infinite loop
+        if (data.skipped_due_to_repeat_limit) {
+            updateAiStatus('Max repeat limit reached (2/2). Moving to next question...', 'text-rose-400 font-bold');
+            if (data.candidate_transcript) {
+                appendTranscriptEntry('candidate', data.candidate_transcript);
+            }
+            // Process next question automatically
+            handleAiQuestionReceived(data);
+            return;
+        }
+
+        // 3. Normal candidate response
         if (data.candidate_transcript) {
             appendTranscriptEntry('candidate', data.candidate_transcript);
         }
@@ -700,11 +897,17 @@ async function submitCandidateAnswer(audioBlob, textAnswer) {
 }
 
 // Manual End Interview button
-document.getElementById('btn-end-interview').addEventListener('click', () => {
+document.getElementById('btn-end-interview')?.addEventListener('click', () => {
     if (confirm('Are you sure you want to end the interview and view the audit dossier?')) {
-        stopSilenceCountdown();
-        if (typeof stopAllStreamsAndProctoring === 'function') {
-            stopAllStreamsAndProctoring();
+        if (typeof window.stopAllHardwareMedia === 'function') {
+            window.stopAllHardwareMedia();
+        } else {
+            stopSilenceCountdown();
+            stopActiveMicrophoneRecording();
+            stopAllAiSpeech();
+            if (typeof stopAllStreamsAndProctoring === 'function') {
+                stopAllStreamsAndProctoring();
+            }
         }
         loadFinalReport();
     }

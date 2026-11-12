@@ -68,10 +68,16 @@ def init_db() -> None:
                 technical_score REAL DEFAULT 0.0,
                 integrity_score REAL DEFAULT 100.0,
                 final_decision TEXT DEFAULT 'PENDING',
+                report_json TEXT,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY (session_id) REFERENCES sessions(id)
             )
         """)
+        # Safe migration if table already existed without report_json column
+        try:
+            cursor.execute("ALTER TABLE reports ADD COLUMN report_json TEXT")
+        except sqlite3.OperationalError:
+            pass
         conn.commit()
 
 # --- Helper CRUD Operations ---
@@ -138,14 +144,14 @@ def get_session_violations(session_id: str) -> List[Dict[str, Any]]:
         cursor.execute("SELECT * FROM violations WHERE session_id = ? ORDER BY id ASC", (session_id,))
         return [dict(row) for row in cursor.fetchall()]
 
-def save_report(session_id: str, summary: str, recommendation: str, technical_score: float, integrity_score: float) -> None:
+def save_report(session_id: str, summary: str, recommendation: str, technical_score: float, integrity_score: float, report_json: Optional[str] = None) -> None:
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT OR REPLACE INTO reports (session_id, summary, recommendation, technical_score, integrity_score, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO reports (session_id, summary, recommendation, technical_score, integrity_score, report_json, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
-            session_id, summary, recommendation, technical_score, integrity_score, datetime.now().isoformat()
+            session_id, summary, recommendation, technical_score, integrity_score, report_json, datetime.now().isoformat()
         ))
         conn.commit()
 
