@@ -504,12 +504,28 @@ function captureVisualProofSnapshot() {
     if (!videoEl) return null;
     try {
         const snapCanvas = document.createElement('canvas');
-        snapCanvas.width = 320;
-        snapCanvas.height = 240;
+        snapCanvas.width = 480;
+        snapCanvas.height = 360;
         const ctx = snapCanvas.getContext('2d');
-        ctx.drawImage(videoEl, 0, 0, 320, 240);
-        // Compressed JPEG at 0.4 quality (~12 - 15 KB)
-        return snapCanvas.toDataURL('image/jpeg', 0.4);
+        
+        // 1. Draw live webcam frame
+        ctx.drawImage(videoEl, 0, 0, 480, 360);
+
+        // 2. Overlay live AI detection canvas (bounding boxes & labels)
+        const overlayCanvas = document.getElementById('proctor-canvas');
+        if (overlayCanvas) {
+            ctx.drawImage(overlayCanvas, 0, 0, 480, 360);
+        }
+
+        // 3. Watermark timestamp bar at bottom
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        ctx.fillRect(0, 330, 480, 30);
+        ctx.fillStyle = '#EF4444';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText(`EVIDENCE CAPTURED: ${new Date().toLocaleTimeString()}`, 12, 350);
+
+        // Crisp JPEG at 0.6 quality (~20 KB)
+        return snapCanvas.toDataURL('image/jpeg', 0.6);
     } catch (e) {
         console.warn("Could not capture webcam snapshot:", e);
         return null;
@@ -606,18 +622,16 @@ function showStrikeModal(currentStrike, reason, snapshotBase64) {
     const title = document.getElementById('proctor-modal-title');
     const msg = document.getElementById('proctor-modal-msg');
     const snapImg = document.getElementById('toast-snapshot-img');
-    const noSnap = document.getElementById('toast-no-snap');
+    const snapContainer = document.getElementById('toast-snapshot-container');
 
     if (title) title.innerText = `Proctoring Warning (${currentStrike}/${maxStrikes})`;
-    if (msg) msg.innerText = `${reason}. Please keep your eyes on the screen and do not switch windows.`;
+    if (msg) msg.innerText = `${reason}. Please keep your eyes on the screen and do not use any secondary device.`;
 
     if (snapshotBase64 && snapImg) {
         snapImg.src = snapshotBase64;
-        snapImg.classList.remove('hidden');
-        if (noSnap) noSnap.classList.add('hidden');
-    } else if (noSnap) {
-        if (snapImg) snapImg.classList.add('hidden');
-        noSnap.classList.remove('hidden');
+        if (snapContainer) snapContainer.classList.remove('hidden');
+    } else if (snapContainer) {
+        snapContainer.classList.add('hidden');
     }
 
     if (modal) modal.classList.remove('hidden');

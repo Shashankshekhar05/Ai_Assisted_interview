@@ -334,19 +334,22 @@ async function loadFinalReport(forceRefresh = false) {
                     vCard.className = "p-4 rounded-xl bg-slate-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
 
                     const snapImg = v.snapshot_base64
-                        ? `<img src="${v.snapshot_base64}" alt="Proof" class="w-28 h-20 object-cover rounded-lg border border-red-300 shadow">`
-                        : `<div class="w-28 h-20 bg-white rounded-lg border border-slate-200 flex items-center justify-center text-[10px] text-slate-400 font-mono">No Image</div>`;
+                        ? `<div class="relative group shrink-0">
+                                <img src="${v.snapshot_base64}" alt="Proof" class="w-36 h-24 object-cover rounded-xl border-2 border-red-400 shadow-md cursor-pointer hover:scale-105 transition" onclick="window.open('${v.snapshot_base64}', '_blank')" title="Click to open full snapshot in new tab">
+                                <span class="absolute bottom-1 right-1 text-[8px] bg-red-600 text-white font-mono px-1 py-0.5 rounded font-bold">CLICK TO ENLARGE</span>
+                           </div>`
+                        : `<div class="w-36 h-24 bg-white rounded-xl border border-slate-200 flex items-center justify-center text-[10px] text-slate-400 font-mono shrink-0">No Image</div>`;
 
                     vCard.innerHTML = `
-                        <div class="flex items-center space-x-3.5">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 flex-1">
                             ${snapImg}
                             <div class="space-y-1">
                                 <span class="text-xs font-bold text-red-600 uppercase font-mono">Strike ${v.strike_number}: ${v.violation_type}</span>
-                                <p class="text-xs text-slate-600">${v.notes || 'Logged by Edge AI'}</p>
+                                <p class="text-xs text-slate-700 font-medium">${v.notes || 'Logged by Edge AI'}</p>
                                 <span class="text-[10px] text-slate-400 font-mono">${v.timestamp}</span>
                             </div>
                         </div>
-                        <span class="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-mono font-bold">Confidence: ${Math.round((v.confidence || 1.0) * 100)}%</span>
+                        <span class="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-mono font-bold shrink-0">Confidence: ${Math.round((v.confidence || 1.0) * 100)}%</span>
                     `;
                     timelineContainer.appendChild(vCard);
                 });
